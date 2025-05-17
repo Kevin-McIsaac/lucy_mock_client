@@ -149,7 +149,7 @@ def meeting_summary_page():
     if st.button("Generate Summary", type="primary"):
         with st.spinner("Processing transcript..."):
             data = {
-                "transcript": transcript_content,
+                "input_text": transcript_content,
                 "model": model_id
             }
             
