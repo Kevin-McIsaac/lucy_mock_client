@@ -158,7 +158,9 @@ def meeting_summary_page():
             if "content" in response:
                 # Display summary
                 st.subheader("Meeting Summary", divider=True)
-                st.markdown(response["content"])
+                # Escape dollar signs for markdown
+                escaped_content = response["content"].replace("$", "\\$")
+                st.markdown(escaped_content)
                 
                 # Save summary
                 safe_model_id = model_id.replace('/', '-').replace(':', '-')
@@ -238,7 +240,9 @@ def game_plan_review_page():
                 if "content" in response:
                     # Display review
                     st.subheader("Game Plan Review", divider=True)
-                    st.markdown(response["content"])
+                    # Escape dollar signs for markdown
+                    escaped_content = response["content"].replace("$", "\\$")
+                    st.markdown(escaped_content)
                     
                     # Save review
                     safe_model_id = model_id.replace('/', '-').replace(':', '-')
