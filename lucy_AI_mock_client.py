@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import json
 import requests
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from pathlib import Path
 import PyPDF2
 from dotenv import load_dotenv
@@ -39,7 +39,7 @@ REVIEW_OUTPUT_DIR = Path("examples/output/game_plan_review")
 for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
-def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None) -> Union[Dict[str, Any], str]:
     """Make API calls to Lucy AI server."""
     # Ensure endpoint has trailing slash if it's just the endpoint name
     if endpoint and not endpoint.endswith('/'):
@@ -51,18 +51,29 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
         "Content-Type": "application/json"
     }
     
+    # Change content type for text data
+    if text_data is not None:
+        headers["Content-Type"] = "text/plain"
+    
     try:
         if method == "GET":
-            response = requests.get(url, headers=headers, allow_redirects=True)
+            response = requests.get(url, headers=headers, params=params, allow_redirects=True)
         elif method == "POST":
             response = requests.post(url, headers=headers, json=data, allow_redirects=True)
         elif method == "PUT":
-            response = requests.put(url, headers=headers, json=data, allow_redirects=True)
+            if text_data is not None:
+                response = requests.put(url, headers=headers, data=text_data, params=params, allow_redirects=True)
+            else:
+                response = requests.put(url, headers=headers, json=data, allow_redirects=True)
         else:
             raise ValueError(f"Unsupported HTTP method: {method}")
         
         response.raise_for_status()
-        return response.json()
+        
+        if return_text:
+            return response.text
+        else:
+            return response.json()
     except requests.exceptions.HTTPError as e:
         st.error(f"HTTP Error {e.response.status_code}: {str(e)}")
         # Try to get more details from response
@@ -71,10 +82,10 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
             st.error(f"Error details: {error_detail}")
         except:
             st.error(f"Response text: {e.response.text}")
-        return {}
+        return {} if not return_text else ""
     except requests.exceptions.RequestException as e:
         st.error(f"API Error: {str(e)}")
-        return {}
+        return {} if not return_text else ""
 
 def check_server_status() -> bool:
     """Check if Lucy AI server is available."""
@@ -260,37 +271,57 @@ def template_management_page():
     """Handle template viewing and editing."""
     st.title("Template Management")
     
-    template_type = st.selectbox(
-        "Select Template Type",
-        options=["meeting_summary", "game_plan_review"]
+    # Use hardcoded list of templates based on the response structure you provided
+    templates_dict = {
+        "/game_plan_review/": "helpers/game_plan_review/prompt.md",
+        "/interview/transcript_to_lead/": "helpers/interview/prompt_meeting_to_lead.json",
+        "/interview/transcript_to_summary/": "helpers/interview/transcript_to_summary.md",
+        "/BID_notes/": "helpers/BID_notes/prompt.md"
+    }
+    
+    template_options = list(templates_dict.values())
+    
+    template_display_names = {
+        "helpers/game_plan_review/prompt.md": "Game Plan Review",
+        "helpers/interview/prompt_meeting_to_lead.json": "Meeting to Lead",
+        "helpers/interview/transcript_to_summary.md": "Meeting Summary",
+        "helpers/BID_notes/prompt.md": "BID Notes"
+    }
+    
+    template_name = st.selectbox(
+        "Select Template",
+        options=template_options,
+        format_func=lambda x: template_display_names.get(x, x)
     )
     
-    # Get current template
-    if st.button("Load Template"):
-        response = call_lucy_api(f"/template/{template_type}")
-        if "template" in response:
-            st.session_state[f"current_template_{template_type}"] = response["template"]
-        else:
-            st.error("Failed to load template")
-    
-    # Display and edit template
-    if f"current_template_{template_type}" in st.session_state:
-        template_content = st.text_area(
-            "Template Content",
-            value=st.session_state[f"current_template_{template_type}"],
-            height=400
-        )
-        
-        # Save template
-        if st.button("Save Template", type="primary"):
-            data = {"template": template_content}
-            response = call_lucy_api(f"/template/{template_type}", method="PUT", data=data)
-            
-            if response.get("status") == "success":
-                st.success("Template saved successfully!")
-                st.session_state[f"current_template_{template_type}"] = template_content
+    if template_name:
+        # Get current template
+        if st.button("Load Template"):
+            params = {"file_name": template_name}
+            response = call_lucy_api("/template/", params=params, return_text=True)
+            if response:
+                st.session_state[f"current_template_{template_name}"] = response
             else:
-                st.error("Failed to save template")
+                st.error("Failed to load template")
+        
+        # Display and edit template
+        if f"current_template_{template_name}" in st.session_state:
+            template_content = st.text_area(
+                "Template Content",
+                value=st.session_state[f"current_template_{template_name}"],
+                height=400
+            )
+            
+            # Save template
+            if st.button("Save Template", type="primary"):
+                params = {"file_name": template_name}
+                response = call_lucy_api("/template/", method="PUT", params=params, text_data=template_content, return_text=True)
+                
+                if response is not None:  # Check for None specifically since empty string might be valid
+                    st.success("Template saved successfully!")
+                    st.session_state[f"current_template_{template_name}"] = template_content
+                else:
+                    st.error("Failed to save template")
 
 def main():
     """Main application entry point."""

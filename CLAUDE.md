@@ -103,3 +103,7 @@ lucy_mock_client/
 │       └── game_plan_review/# Generated reviews
 └── .venv/                   # Virtual environment
 ```
+
+## OpenAPI Integration
+
+- Use the openapi.json definitions of the lucy_ai_server from the URL http://localhost:8000/openapi.json
