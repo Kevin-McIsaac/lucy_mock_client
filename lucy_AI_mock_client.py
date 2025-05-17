@@ -27,8 +27,6 @@ AI_MODELS = {
     "groq:meta-llama/llama-4-scout-17b-16e-instruct": "Llama 4 Scout (Groq)"
 }
 
-# No mapping needed - using full model IDs directly
-
 # Directory paths
 TRANSCRIPTS_DIR = Path("examples/sources/transcripts")
 GAME_PLANS_DIR = Path("examples/sources/game_plans")
@@ -41,10 +39,6 @@ for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUT
 
 def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None) -> Union[Dict[str, Any], str]:
     """Make API calls to Lucy AI server."""
-
-    # Ensure endpoint has trailing slash for other endpoints
-    if endpoint and not endpoint.endswith('/'):
-        endpoint += '/'
     
     url = f"{LUCY_API_URL}{endpoint}"
     headers = {
@@ -81,7 +75,7 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
         try:
             error_detail = e.response.json()
             st.error(f"Error details: {error_detail}")
-        except:
+        except e:
             st.error(f"Response text: {e.response.text}")
         return {} if not return_text else ""
     except requests.exceptions.RequestException as e:
@@ -93,7 +87,7 @@ def check_server_status() -> bool:
     try:
         response = call_lucy_api("/status/")
         return bool(response)  # Just check if we got a response
-    except:
+    except Exception:
         return False
 
 def extract_pdf_text(pdf_file) -> str:
@@ -116,7 +110,7 @@ def welcome_page():
     - Process meeting transcripts into actionable summaries
     - Review mortgage game plans for compliance issues
     
-    Please select a feature from the navigation menu to get started.""")
+    Set your model and select a feature from the navigation menu to get started.""")
     
     # Check server status
     if st.button("Check Server Status"):
