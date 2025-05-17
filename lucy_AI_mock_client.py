@@ -128,13 +128,8 @@ def meeting_summary_page():
     """Handle meeting summary processing."""
     st.title("Meeting Summary Generator")
     
-    # Model selection
-    model_id = st.selectbox(
-        "Select AI Model", 
-        options=list(AI_MODELS.keys()),
-        format_func=lambda x: AI_MODELS[x],
-        key="meeting_model"
-    )
+    # Use shared model from session state
+    model_id = st.session_state.selected_model
     
     # File selection
     transcript_files = list(TRANSCRIPTS_DIR.glob("*.md"))
@@ -189,13 +184,8 @@ def game_plan_review_page():
     """Handle game plan review processing."""
     st.title("Game Plan Review")
     
-    # Model selection
-    model_id = st.selectbox(
-        "Select AI Model", 
-        options=list(AI_MODELS.keys()),
-        format_func=lambda x: AI_MODELS[x],
-        key="review_model"
-    )
+    # Use shared model from session state
+    model_id = st.session_state.selected_model
     
     # File selection
     game_plan_files = list(GAME_PLANS_DIR.glob("*.pdf"))
@@ -330,6 +320,21 @@ def main():
         page_icon="🏠",
         layout="wide"
     )
+    
+    # Initialize session state for model selection
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = list(AI_MODELS.keys())[0]
+    
+    # Shared sidebar for all pages
+    with st.sidebar:
+        st.header("Settings")
+        st.session_state.selected_model = st.selectbox(
+            "Select AI Model", 
+            options=list(AI_MODELS.keys()),
+            format_func=lambda x: AI_MODELS[x],
+            key="global_model_selector",
+            index=list(AI_MODELS.keys()).index(st.session_state.selected_model)
+        )
     
     # Pages configuration
     pages = [
