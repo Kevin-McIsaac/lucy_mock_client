@@ -17,15 +17,17 @@ LUCY_API_KEY = os.getenv('API_KEY', '')
 
 # Available AI models
 AI_MODELS = {
-    "claude-3.7-sonnet": "Claude 3.7 Sonnet (Anthropic)",
-    "claude-3.5-haiku": "Claude 3.5 Haiku (Anthropic)",
-    "gpt-4.1": "GPT 4.1 (OpenAI)",
-    "gpt-4.1-mini": "GPT 4.1 Mini (OpenAI)",
-    "gemini-2.0-flash": "Gemini 2.0 Flash (Google)",
-    "gemini-2.5-flash-preview": "Gemini 2.5 Flash Preview (Google)",
-    "llama-4-maverick": "Llama 4 Maverick (Groq)",
-    "llama-4-scout": "Llama 4 Scout (Groq)"
+    "anthropic:claude-3-7-sonnet-latest": "Claude 3.7 Sonnet (Anthropic)",
+    "anthropic:claude-3-5-haiku-latest": "Claude 3.5 Haiku (Anthropic)",
+    "openai:gpt-4.1": "GPT 4.1 (OpenAI)",
+    "openai:gpt-4.1-mini": "GPT 4.1 Mini (OpenAI)",
+    "google_genai:gemini-2.0-flash": "Gemini 2.0 Flash (Google)",
+    "google_genai:gemini-2.5-flash-preview-04-17": "Gemini 2.5 Flash Preview (Google)",
+    "groq:meta-llama/llama-4-maverick-17b-128e-instruct": "Llama 4 Maverick (Groq)",
+    "groq:meta-llama/llama-4-scout-17b-16e-instruct": "Llama 4 Scout (Groq)"
 }
+
+# No mapping needed - using full model IDs directly
 
 # Directory paths
 TRANSCRIPTS_DIR = Path("examples/sources/transcripts")
@@ -61,6 +63,15 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
         
         response.raise_for_status()
         return response.json()
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP Error {e.response.status_code}: {str(e)}")
+        # Try to get more details from response
+        try:
+            error_detail = e.response.json()
+            st.error(f"Error details: {error_detail}")
+        except:
+            st.error(f"Response text: {e.response.text}")
+        return {}
     except requests.exceptions.RequestException as e:
         st.error(f"API Error: {str(e)}")
         return {}
@@ -139,24 +150,24 @@ def meeting_summary_page():
         with st.spinner("Processing transcript..."):
             data = {
                 "transcript": transcript_content,
-                "model_slug": model_id  # Changed from "model" to "model_slug"
+                "model": model_id
             }
             
             response = call_lucy_api("/interview/transcript_to_summary", method="POST", data=data)
             
-            if "summary" in response:
+            if "content" in response:
                 st.success("Summary generated successfully!")
                 
                 # Display summary
                 st.markdown("### Meeting Summary")
-                st.markdown(response["summary"])
+                st.markdown(response["content"])
                 
                 # Save summary
                 output_filename = f"{selected_file.stem}_{model_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
                 output_path = SUMMARY_OUTPUT_DIR / output_filename
                 
                 with open(output_path, "w") as f:
-                    f.write(response["summary"])
+                    f.write(response["content"])
                 
                 st.success(f"Summary saved to {output_path}")
             else:
@@ -204,25 +215,25 @@ def game_plan_review_page():
         if st.button("Review Game Plan", type="primary"):
             with st.spinner("Analyzing game plan..."):
                 data = {
-                    "game_plan": pdf_text,
-                    "model_slug": model_id  # Changed from "model" to "model_slug"
+                    "input_text": pdf_text,
+                    "model": model_id
                 }
                 
                 response = call_lucy_api("/game_plan_review", method="POST", data=data)
                 
-                if "review" in response:
+                if "content" in response:
                     st.success("Review completed successfully!")
                     
                     # Display review
                     st.markdown("### Game Plan Review")
-                    st.markdown(response["review"])
+                    st.markdown(response["content"])
                     
                     # Save review
                     output_filename = f"{Path(filename).stem}_{model_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
                     output_path = REVIEW_OUTPUT_DIR / output_filename
                     
                     with open(output_path, "w") as f:
-                        f.write(response["review"])
+                        f.write(response["content"])
                     
                     st.success(f"Review saved to {output_path}")
                 else:
