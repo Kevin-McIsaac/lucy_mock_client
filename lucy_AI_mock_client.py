@@ -156,14 +156,13 @@ def meeting_summary_page():
             response = call_lucy_api("/interview/transcript_to_summary", method="POST", data=data)
             
             if "content" in response:
-                st.success("Summary generated successfully!")
-                
                 # Display summary
-                st.markdown("### Meeting Summary")
+                st.subheader("Meeting Summary", divider=True)
                 st.markdown(response["content"])
                 
                 # Save summary
-                output_filename = f"{selected_file.stem}_{model_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                safe_model_id = model_id.replace('/', '-').replace(':', '-')
+                output_filename = f"{selected_file.stem}_{safe_model_id}.md"
                 output_path = SUMMARY_OUTPUT_DIR / output_filename
                 
                 with open(output_path, "w") as f:
@@ -192,7 +191,14 @@ def game_plan_review_page():
         # Allow file upload
         uploaded_file = st.file_uploader("Upload PDF Game Plan", type="pdf")
         if uploaded_file:
-            pdf_text = extract_pdf_text(uploaded_file)
+            # Check if we already extracted this uploaded file
+            cache_key = f"uploaded_pdf_{uploaded_file.name}_{uploaded_file.size}"
+            if cache_key not in st.session_state:
+                with st.spinner("Extracting text from uploaded PDF..."):
+                    pdf_text = extract_pdf_text(uploaded_file)
+                    st.session_state[cache_key] = pdf_text
+            else:
+                pdf_text = st.session_state[cache_key]
             filename = uploaded_file.name
     else:
         selected_file = st.selectbox(
@@ -202,8 +208,16 @@ def game_plan_review_page():
         )
         
         if selected_file:
-            with open(selected_file, "rb") as f:
-                pdf_text = extract_pdf_text(f)
+            # Check if we already extracted this file
+            cache_key = f"pdf_text_{selected_file}"
+            if cache_key not in st.session_state or st.session_state.get("last_selected_file") != selected_file:
+                with st.spinner("Loading and extracting PDF..."):
+                    with open(selected_file, "rb") as f:
+                        pdf_text = extract_pdf_text(f)
+                    st.session_state[cache_key] = pdf_text
+                    st.session_state["last_selected_file"] = selected_file
+            else:
+                pdf_text = st.session_state[cache_key]
             filename = selected_file.name
     
     # Display extracted text
@@ -222,14 +236,13 @@ def game_plan_review_page():
                 response = call_lucy_api("/game_plan_review", method="POST", data=data)
                 
                 if "content" in response:
-                    st.success("Review completed successfully!")
-                    
                     # Display review
-                    st.markdown("### Game Plan Review")
+                    st.subheader("Game Plan Review", divider=True)
                     st.markdown(response["content"])
                     
                     # Save review
-                    output_filename = f"{Path(filename).stem}_{model_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+                    safe_model_id = model_id.replace('/', '-').replace(':', '-')
+                    output_filename = f"{Path(filename).stem}_{safe_model_id}.md"
                     output_path = REVIEW_OUTPUT_DIR / output_filename
                     
                     with open(output_path, "w") as f:
