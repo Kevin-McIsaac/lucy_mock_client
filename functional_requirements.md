@@ -75,6 +75,7 @@ Support for the following AI models with specific identifiers:
 - **Save Templates**: Persist template changes to server via PUT with plain text body
 - **Load Templates**: GET with `file_name` query parameter, returns plain text
 - **Template Display**: Convert API keys to human-readable names (e.g., "/game_plan_review/" → "Game Plan Review")
+- **Pull Request**: Create pull request via POST to `/template/` with `file_name` as query parameter and empty body
 
 
 ### 3.5 File Management
@@ -107,7 +108,7 @@ and displays available endpoints from the OpenAPI spec.
   - Use `API_ENDPOINT` from .env as teh base of the API url
   - `/interview/transcript_to_summary/`: Generate meeting summaries
   - `/game_plan_review/`: Analyze game plans for compliance
-  - `/template/`: GET/PUT template management with `file_name` query parameter
+  - `/template/`: GET/PUT/POST template management with `file_name` query parameter
   - `/template/list/`: GET list of available templates
   - `/status/`: Server health check
 - **Authentication**: API key-based authentication using x-api-key header found in .env as `API_KEY`
@@ -115,6 +116,7 @@ and displays available endpoints from the OpenAPI spec.
   - JSON request/response for main endpoints
   - Plain text response for template GET
   - Plain text body for template PUT
+  - Empty body for template POST (Pull Request)
   - All responses contain `content` field with generated text
   - Responses may include `usage_metadata` field with model usage information
 - **Request Parameters**: 

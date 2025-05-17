@@ -84,6 +84,7 @@ chmod +x cleanup_processes.sh
 4. Click "Load Template" to view current template content as plain text
 5. Edit the template content in the text area
 6. Click "Save Template" to update (sends plain text body with file_name query parameter)
+7. Click "Pull Request" to create a pull request (sends POST with empty body and file_name parameter)
 
 ### Model Selection
 
@@ -154,7 +155,10 @@ The application connects to the following Lucy AI server endpoints:
 - `/status/` - Health check
 - `/interview/transcript_to_summary/` - Meeting summary generation
 - `/game_plan_review/` - Game plan analysis
-- `/template/` - Template load/save with `file_name` query parameter
+- `/template/` - Template load/save/pull request with `file_name` query parameter
+  - GET: Load template (returns plain text)
+  - PUT: Save template (accepts plain text body)
+  - POST: Create pull request (accepts empty body)
 - `/template/list/` - Get available templates
 - `/openapi.json` - OpenAPI specification for endpoint discovery
 

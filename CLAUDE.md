@@ -45,7 +45,7 @@ ruff check lucy_AI_mock_client.py
 The app integrates with Lucy AI server endpoints:
 - `/interview/transcript_to_summary/`: Process meeting transcripts
 - `/game_plan_review/`: Analyze game plans
-- `/template/`: Manage templates (GET/PUT with `file_name` query parameter)
+- `/template/`: Manage templates (GET/PUT/POST with `file_name` query parameter)
 - `/template/list/`: Get available templates
 - `/status/`: Check server health
 
@@ -63,6 +63,7 @@ Note: All endpoints require trailing slashes.
 - Usage metadata: `usage_metadata` field with model usage information
 - Template GET: Returns plain text
 - Template PUT: Accepts plain text body
+- Template POST: Accepts empty body for Pull Request creation
 
 ## Development Notes
 
@@ -92,11 +93,18 @@ Note: All endpoints require trailing slashes.
    - Enhanced error messages with HTTP status codes
    - Uses `allow_redirects=True` for handling redirects
    - Improved error handling with detailed responses
+   - Supports `empty_body` parameter for POST requests with empty payload
 
 4. File handling:
    - Transcripts: Markdown files in `examples/sources/transcripts/`
    - Game plans: PDF files in `examples/sources/game_plans/`
    - Outputs saved with model ID (format: `{original_filename}_{model_id}.md`)
+
+5. Template management:
+   - Load template: GET request with `file_name` query parameter
+   - Save template: PUT request with plain text body and `file_name` query parameter
+   - Pull Request: POST request with empty body and `file_name` query parameter
+   - UI uses two-column layout for Save Template (primary) and Pull Request (secondary) buttons
 
 ## Error Handling
 
