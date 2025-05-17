@@ -38,7 +38,7 @@ REVIEW_OUTPUT_DIR = Path("examples/output/game_plan_review")
 for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
-def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None) -> Union[Dict[str, Any], str]:
+def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None, empty_body: bool = False) -> Union[Dict[str, Any], str]:
     """Make API calls to Lucy AI server with consistent error handling.
     
     Args:
@@ -48,6 +48,7 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
         params: Query parameters for the request
         return_text: Return response as text instead of JSON
         text_data: Plain text data for PUT requests (e.g., template content)
+        empty_body: If True, send empty body for POST requests
         
     Returns:
         Response data as JSON dict or text string, empty dict/string on error
@@ -67,7 +68,10 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
         if method == "GET":
             response = requests.get(url, headers=headers, params=params, allow_redirects=True)
         elif method == "POST":
-            response = requests.post(url, headers=headers, json=data, allow_redirects=True)
+            if empty_body:
+                response = requests.post(url, headers=headers, data='', params=params, allow_redirects=True)
+            else:
+                response = requests.post(url, headers=headers, json=data, params=params, allow_redirects=True)
         elif method == "PUT":
             if text_data is not None:
                 response = requests.put(url, headers=headers, data=text_data, params=params, allow_redirects=True)
@@ -419,15 +423,34 @@ def template_management_page():
             )
             
             # Save template
-            if st.button("Save Template", type="primary"):
-                params = {"file_name": template_name}
-                response = call_lucy_api("/template/", method="PUT", params=params, text_data=template_content, return_text=True)
-                
-                if response is not None:  # Check for None specifically since empty string might be valid
-                    st.success("Template saved successfully!")
-                    st.session_state.templates[template_name] = template_content
-                else:
-                    st.error("Failed to save template")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("Save Template", type="primary"):
+                    params = {"file_name": template_name}
+                    response = call_lucy_api("/template/", method="PUT", params=params, text_data=template_content, return_text=True)
+                    
+                    if response is not None:  # Check for None specifically since empty string might be valid
+                        st.success("Template saved successfully!")
+                        st.session_state.templates[template_name] = template_content
+                    else:
+                        st.error("Failed to save template")
+            
+            with col2:
+                if st.button("Pull Request", type="secondary"):
+                    params = {"file_name": template_name}
+                    response = call_lucy_api("/template/", method="POST", params=params, empty_body=True)
+                    
+                    if response:
+                        st.success("Pull request created successfully!")
+                        # Display response details if available
+                        if isinstance(response, dict):
+                            if "message" in response:
+                                st.info(response["message"])
+                            elif "detail" in response:
+                                st.info(response["detail"])
+                    else:
+                        st.error("Failed to create pull request")
 
 def main():
     """Main application entry point.
