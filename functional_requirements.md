@@ -12,9 +12,10 @@ To provide a user-friendly interface for processing mortgage-related documents u
 - Review mortgage game plans for compliance issues
 
 ### 2.2 Architecture
-- **Frontend**: Streamlit web application with multi-page navigation based on st.navigation build
+- **Frontend**: Streamlit web application with multi-page navigation using st.navigation and st.Page
 - **Backend**: Lucy AI server API (external dependency)
 - **Implementation**: Single Python file (lucy_AI_mock_client.py) with functional programming approach
+- **State Management**: Streamlit session state for caching and user preferences
 
 ## 3. Functional Requirements
 
@@ -37,29 +38,41 @@ To provide a user-friendly interface for processing mortgage-related documents u
 ### 3.2 User Interface Components
 
 #### 3.2.1 Navigation
-- Multi-page application with sidebar navigation.
-- Two main pages: Meeting Summary and Game Plan Review
-- Welcome page with overview of available features
+- Multi-page application using st.navigation and st.Page
+- Four main pages: Welcome, Meeting Summary, Game Plan Review, Template Management
+- Sidebar with global model selection that persists across pages
 
 #### 3.2.2 Common Controls
-- **Model Selection**: Choose from multiple AI models for processing. 
-- **Template Editor**: Modify templates used for summaries and reviews
-- **File Upload**: Upload documents for processing
-- **Process Buttons**: Initiate AI processing of documents
-- **Save Functions**: Export results to local file system
+- **Model Selection**: Choose from multiple AI models in sidebar (shared across pages)
+- **Template Editor**: View and modify templates with dynamic list from API
+- **File Upload**: Upload documents for processing (PDF support)
+- **Process Buttons**: Primary buttons for initiating AI processing
+- **Save Functions**: Automatic export to local file system
 - **Server Status Check**: Verify Lucy AI server connectivity
+- **Dollar Sign Escaping**: Automatic escaping for proper markdown rendering
 
 ### 3.3 AI Model Support
-Support for the following AI models:
-- Anthropic Claude models (3.7 Sonnet, 3.5 Haiku)
-- OpenAI GPT models (4.1, 4.1-mini)
-- Google Gemini models (2.0 Flash, 2.5 Flash Preview)
-- Groq Llama models (4 Maverick, 4 Scout)
+Support for the following AI models with specific identifiers:
+- **Anthropic Claude models**:
+  - Claude 3.7 Sonnet Latest (`anthropic:claude-3-7-sonnet-latest`)
+  - Claude 3.5 Haiku Latest (`anthropic:claude-3-5-haiku-latest`)
+- **OpenAI GPT models**:
+  - GPT 4.1 (`openai:gpt-4.1`)
+  - GPT 4.1 Mini (`openai:gpt-4.1-mini`)
+- **Google Gemini models**:
+  - Gemini 2.0 Flash (`google_genai:gemini-2.0-flash`)
+  - Gemini 2.5 Flash Preview (`google_genai:gemini-2.5-flash-preview-04-17`)
+- **Groq Llama models**:
+  - Llama 4 Maverick (`groq:meta-llama/llama-4-maverick-17b-128e-instruct`)
+  - Llama 4 Scout (`groq:meta-llama/llama-4-scout-17b-16e-instruct`)
 
 ### 3.4 Template Management
-- **View Templates**: Display current templates for summaries and reviews. Use lucy_ai_server API to get templates
-- **Edit Templates**: Modify templates.
-- **Save Templates**: Persist template changes to the server Use lucy_ai_server API to get templates
+- **List Templates**: Dynamically fetch available templates from `/template/list/` API
+- **View Templates**: Display current templates with user-friendly names
+- **Edit Templates**: Modify templates using text area with configurable height
+- **Save Templates**: Persist template changes to server via PUT with plain text body
+- **Load Templates**: GET with `file_name` query parameter, returns plain text
+- **Template Display**: Convert API keys to human-readable names (e.g., "/game_plan_review/" → "Game Plan Review")
 
 
 ### 3.5 File Management
@@ -67,7 +80,8 @@ Support for the following AI models:
 - **Output Directory Structure**: Organized storage in `examples/output/`
   - `meeting_summary/`: Processed transcript summaries
   - `game_plan_review/`: Game plan compliance reviews
-- **File Naming**: Include source filename and model used in output names
+- **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
+- **PDF Caching**: Extracted PDF text is cached in session state to avoid reprocessing
 
 ### 3.6 Session State Management
 - Preserve user preferences (model selection)
@@ -82,14 +96,20 @@ Support for the following AI models:
 - **Endpoints**:
   - `/interview/transcript_to_summary/`: Generate meeting summaries
   - `/game_plan_review/`: Analyze game plans for compliance
-  - `/template/`: GET/PUT template management
+  - `/template/`: GET/PUT template management with `file_name` query parameter
+  - `/template/list/`: GET list of available templates
   - `/status/`: Server health check
 - **Authentication**: API key-based authentication using x-api-key header
-- **Data Format**: JSON request/response with markdown content
+- **Data Format**: 
+  - JSON request/response for main endpoints
+  - Plain text response for template GET
+  - Plain text body for template PUT
+  - All responses contain `content` field with generated text
 - **Request Parameters**: 
-  - Use `model_slug` for model selection
-  - Use `transcript` for meeting summary input
-  - Use `game_plan` for game plan review input
+  - Use `model` for model selection (full model ID with provider prefix)
+  - Use `input_text` for both meeting summary and game plan review input
+  - Use `file_name` as query parameter for template operations
+- **Endpoint Format**: All endpoints require trailing slashes
 
 
 ### 3.9 Performance Requirements
