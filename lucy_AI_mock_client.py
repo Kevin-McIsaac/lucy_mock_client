@@ -13,8 +13,8 @@ import re
 load_dotenv()
 
 # Configuration
-LUCY_API_URL = os.getenv('API_ENDPOINT', 'http://localhost:8000')
-LUCY_API_KEY = os.getenv('API_KEY', '')
+API_ENDPOINT = os.getenv('API_ENDPOINT', 'http://localhost:8000')
+API_KEY = os.getenv('API_KEY', '')
 
 # Available AI models
 AI_MODELS = {
@@ -39,11 +39,23 @@ for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUT
     dir_path.mkdir(parents=True, exist_ok=True)
 
 def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None) -> Union[Dict[str, Any], str]:
-    """Make API calls to Lucy AI server."""
+    """Make API calls to Lucy AI server with consistent error handling.
     
-    url = f"{LUCY_API_URL}{endpoint}"
+    Args:
+        endpoint: API endpoint path (e.g., '/status/', '/template/')
+        method: HTTP method (GET, POST, PUT)
+        data: JSON data for POST/PUT requests
+        params: Query parameters for the request
+        return_text: Return response as text instead of JSON
+        text_data: Plain text data for PUT requests (e.g., template content)
+        
+    Returns:
+        Response data as JSON dict or text string, empty dict/string on error
+    """
+    
+    url = f"{API_ENDPOINT}{endpoint}"
     headers = {
-        "x-api-key": LUCY_API_KEY,
+        "x-api-key": API_KEY,
         "Content-Type": "application/json"
     }
     
@@ -71,40 +83,91 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
         else:
             return response.json()
     except requests.exceptions.HTTPError as e:
-        st.error(f"HTTP Error {e.response.status_code}: {str(e)}")
+        error_msg = f"HTTP Error {e.response.status_code}: {str(e)}"
+        
         # Try to get more details from response
         try:
             error_detail = e.response.json()
-            st.error(f"Error details: {error_detail}")
-        except e:
-            st.error(f"Response text: {e.response.text}")
+            if isinstance(error_detail, dict) and "detail" in error_detail:
+                error_msg += f" - {error_detail['detail']}"
+            else:
+                error_msg += f" - {error_detail}"
+        except:
+            if e.response.text:
+                error_msg += f" - {e.response.text[:200]}"  # Limit response text length
+        
+        st.error(error_msg)
         return {} if not return_text else ""
     except requests.exceptions.RequestException as e:
-        st.error(f"API Error: {str(e)}")
+        st.error(f"API Connection Error: {str(e)}")
+        return {} if not return_text else ""
+    except Exception as e:
+        st.error(f"Unexpected Error: {str(e)}")
         return {} if not return_text else ""
 
 def check_server_status() -> bool:
-    """Check if Lucy AI server is available."""
+    """Check if Lucy AI server is available.
+    
+    Makes a GET request to the /status/ endpoint to verify server connectivity.
+    
+    Returns:
+        True if server is accessible, False otherwise
+    """
     try:
         response = call_lucy_api("/status/")
         return bool(response)  # Just check if we got a response
     except Exception:
         return False
 
+def fetch_openapi_spec() -> Optional[Dict[str, Any]]:
+    """Fetch OpenAPI specification from Lucy AI server.
+    
+    Retrieves the OpenAPI JSON spec from /openapi.json endpoint.
+    Used to discover available endpoints and their parameters.
+    
+    Returns:
+        OpenAPI spec as dict if successful, None on error
+    """
+    try:
+        response = requests.get(f"{API_ENDPOINT}/openapi.json")
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        st.warning(f"Failed to fetch OpenAPI spec: {str(e)}")
+        return None
+
 def extract_pdf_text(pdf_file) -> str:
-    """Extract text from uploaded PDF file."""
+    """Extract text from uploaded PDF file.
+    
+    Uses PyPDF2 to extract all text content from a PDF file.
+    Handles both uploaded files and file objects.
+    
+    Args:
+        pdf_file: File object or uploaded file to extract text from
+        
+    Returns:
+        Extracted text content, empty string on error
+    """
     try:
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         text = ""
         for page in pdf_reader.pages:
             text += page.extract_text() + "\n"
         return text
+    except PyPDF2.errors.PdfReadError as e:
+        st.error(f"PDF Read Error: {str(e)}")
+        return ""
     except Exception as e:
-        st.error(f"Error reading PDF: {str(e)}")
+        st.error(f"Unexpected Error reading PDF: {str(e)}")
         return ""
 
 def welcome_page():
-    """Display welcome page with feature overview."""
+    """Display welcome page with feature overview.
+    
+    Shows an introduction to the application features and provides
+    a server status check button that displays available API endpoints
+    from the OpenAPI spec when clicked.
+    """
     st.title("Welcome to Lucy AI Mock Client")
     st.write("""This application provides mortgage professionals with AI-powered tools to:
     
@@ -117,11 +180,31 @@ def welcome_page():
     if st.button("Check Server Status"):
         if check_server_status():
             st.success("Lucy AI server is online and ready!")
+            
+            # Fetch and display OpenAPI info
+            openapi_spec = fetch_openapi_spec()
+            if openapi_spec:
+                with st.expander("Available API Endpoints", expanded=False):
+                    if "paths" in openapi_spec:
+                        for path, methods in openapi_spec["paths"].items():
+                            st.write(f"**{path}**")
+                            for method, details in methods.items():
+                                if isinstance(details, dict) and "summary" in details:
+                                    st.write(f"- {method.upper()}: {details['summary']}")
+                            st.write("")
         else:
             st.error("Cannot connect to Lucy AI server. Please check your configuration.")
 
 def meeting_summary_page():
-    """Handle meeting summary processing."""
+    """Handle meeting summary processing.
+    
+    Allows users to:
+    - Select transcript files from examples/sources/transcripts/
+    - View transcript content in an expandable section
+    - Generate AI summaries using selected model
+    - Save summaries to examples/output/meeting_summary/
+    - Display usage metadata from the API response
+    """
     st.title("Meeting Summary Generator")
     
     # Use shared model from session state
@@ -180,11 +263,24 @@ def meeting_summary_page():
                 st.error("Failed to generate summary")
 
 def game_plan_review_page():
-    """Handle game plan review processing."""
+    """Handle game plan review processing.
+    
+    Allows users to:
+    - Select PDF files from examples/sources/game_plans/
+    - Upload PDF files if none exist in source directory
+    - Extract and cache PDF text for performance
+    - Generate compliance reviews using selected model
+    - Save reviews to examples/output/game_plan_review/
+    - Display usage metadata from the API response
+    """
     st.title("Game Plan Review")
     
     # Use shared model from session state
     model_id = st.session_state.selected_model
+    
+    # Initialize PDF cache in session state
+    if "pdf_cache" not in st.session_state:
+        st.session_state.pdf_cache = {}
     
     # File selection
     game_plan_files = list(GAME_PLANS_DIR.glob("*.pdf"))
@@ -193,14 +289,14 @@ def game_plan_review_page():
         # Allow file upload
         uploaded_file = st.file_uploader("Upload PDF Game Plan", type="pdf")
         if uploaded_file:
-            # Check if we already extracted this uploaded file
-            cache_key = f"uploaded_pdf_{uploaded_file.name}_{uploaded_file.size}"
-            if cache_key not in st.session_state:
+            # Create a unique key for the uploaded file
+            cache_key = f"{uploaded_file.name}:{uploaded_file.size}"
+            if cache_key not in st.session_state.pdf_cache:
                 with st.spinner("Extracting text from uploaded PDF..."):
                     pdf_text = extract_pdf_text(uploaded_file)
-                    st.session_state[cache_key] = pdf_text
+                    st.session_state.pdf_cache[cache_key] = pdf_text
             else:
-                pdf_text = st.session_state[cache_key]
+                pdf_text = st.session_state.pdf_cache[cache_key]
             filename = uploaded_file.name
     else:
         selected_file = st.selectbox(
@@ -210,16 +306,15 @@ def game_plan_review_page():
         )
         
         if selected_file:
-            # Check if we already extracted this file
-            cache_key = f"pdf_text_{selected_file}"
-            if cache_key not in st.session_state or st.session_state.get("last_selected_file") != selected_file:
+            # Use file path as cache key
+            cache_key = str(selected_file)
+            if cache_key not in st.session_state.pdf_cache:
                 with st.spinner("Loading and extracting PDF..."):
                     with open(selected_file, "rb") as f:
                         pdf_text = extract_pdf_text(f)
-                    st.session_state[cache_key] = pdf_text
-                    st.session_state["last_selected_file"] = selected_file
+                    st.session_state.pdf_cache[cache_key] = pdf_text
             else:
-                pdf_text = st.session_state[cache_key]
+                pdf_text = st.session_state.pdf_cache[cache_key]
             filename = selected_file.name
     
     # Display extracted text
@@ -260,8 +355,20 @@ def game_plan_review_page():
                     st.error("Failed to generate review")
 
 def template_management_page():
-    """Handle template viewing and editing."""
+    """Handle template viewing and editing.
+    
+    Provides interface for managing Lucy AI templates:
+    - Fetches available templates from /template/list/ endpoint
+    - Displays templates with human-readable names
+    - Loads template content for viewing/editing
+    - Saves modified templates back to server
+    - Uses session state for template caching
+    """
     st.title("Template Management")
+    
+    # Initialize template storage in session state
+    if "templates" not in st.session_state:
+        st.session_state.templates = {}
     
     # Get list of templates from the API
     template_list_response = call_lucy_api("/template/list/", method="GET")
@@ -295,15 +402,15 @@ def template_management_page():
             params = {"file_name": template_name}
             response = call_lucy_api("/template/", params=params, return_text=True)
             if response:
-                st.session_state[f"current_template_{template_name}"] = response
+                st.session_state.templates[template_name] = response
             else:
                 st.error("Failed to load template")
         
         # Display and edit template
-        if f"current_template_{template_name}" in st.session_state:
+        if template_name in st.session_state.templates:
             template_content = st.text_area(
                 "Template Content",
-                value=st.session_state[f"current_template_{template_name}"],
+                value=st.session_state.templates[template_name],
                 height=400
             )
             
@@ -314,12 +421,20 @@ def template_management_page():
                 
                 if response is not None:  # Check for None specifically since empty string might be valid
                     st.success("Template saved successfully!")
-                    st.session_state[f"current_template_{template_name}"] = template_content
+                    st.session_state.templates[template_name] = template_content
                 else:
                     st.error("Failed to save template")
 
 def main():
-    """Main application entry point."""
+    """Main application entry point.
+    
+    Configures Streamlit app with:
+    - Wide layout and page title/icon
+    - Session state initialization
+    - Sidebar with global model selection
+    - Multi-page navigation using st.navigation
+    - Persistent model selection across pages
+    """
     st.set_page_config(
         page_title="Lucy AI Mock Client",
         page_icon="🏠",

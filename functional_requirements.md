@@ -8,7 +8,7 @@ The Lucy AI Mock Client is a Streamlit-based web application that serves as a fr
 
 ### 2.1 Purpose
 To provide a user-friendly interface for processing mortgage-related documents using AI-powered analysis, enabling professionals to:
-- Convert meeting transcripts into actionable summaries 
+- Summarise meeting transcripts into actionable meeting summaries 
 - Review mortgage game plans for compliance issues
 
 ### 2.2 Architecture
@@ -23,16 +23,15 @@ To provide a user-friendly interface for processing mortgage-related documents u
 
 #### 3.1.1 Meeting Summary Processing
 - **Upload Meeting Transcripts**: Let the user select markdown files containing meeting transcripts from examples/sources/transcripts. Display the transcript in st.markdown that is inside a closed expander
-- **Generate Meeting Summaries**: Process transcripts through Lucy AI API to create structured meeting summaries. Display the content as formatted markdown with escaped dollar signs
+- **Generate Meeting Summaries**: Process transcripts through Lucy AI API to create structured meeting summaries. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
 - **Usage Metadata**: Display model usage information in st.info after the summary content
 - **Export Capabilities**: Save summaries to the folder examples/output/meeting_summary using the filename from the transcript
 - **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
 
 #### 3.1.2 Game Plan Review
 - **Upload PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
-- **File Upload Alternative**: Allow direct PDF upload when no files exist in the source directory  
 - **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
-- **Review**: Analyze game plans using Lucy AI. Display the content as formatted markdown with escaped dollar signs
+- **Review**: Analyze game plans using Lucy AI. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
 - **Usage Metadata**: Display model usage information in st.info after the review content
 - **Save Reviews**: Save reviews to the folder examples/output/game_plan_review using the filename from the game plan
 - **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
@@ -51,7 +50,7 @@ To provide a user-friendly interface for processing mortgage-related documents u
 - **Process Buttons**: Primary buttons for initiating AI processing
 - **Save Functions**: Automatic export to local file system
 - **Server Status Check**: Verify Lucy AI server connectivity
-- **Dollar Sign Escaping**: Automatic escaping for proper markdown rendering
+- **Dollar Sign Escaping**: Automatic escaping for proper markdown rendering. 
 
 ### 3.3 AI Model Support
 Support for the following AI models with specific identifiers:
@@ -87,21 +86,30 @@ Support for the following AI models with specific identifiers:
 
 ### 3.6 Session State Management
 - Preserve user preferences (model selection)
+- Template caching using simple dictionary structure
+- PDF text caching to avoid re-extraction
 
 ### 3.7 Error Handling
 - Display appropriate error messages
 - Provide user guidance for error resolution
+- Consistent error handling with structured exception catching
+- Detailed error messages including HTTP status codes and API responses
 
 ### 3.8 Integration Requirements
 
 #### 3.8.1 Lucy AI Server API
+Lucy AI server provides an OpenAPI JSON description of 
+each endpoint at `http://localhost:8000/openapi.json`. This should 
+take precedence over the specifications below. The client now fetches
+and displays available endpoints from the OpenAPI spec.
 - **Endpoints**:
+  - Use `API_ENDPOINT` from .env as teh base of the API url
   - `/interview/transcript_to_summary/`: Generate meeting summaries
   - `/game_plan_review/`: Analyze game plans for compliance
   - `/template/`: GET/PUT template management with `file_name` query parameter
   - `/template/list/`: GET list of available templates
   - `/status/`: Server health check
-- **Authentication**: API key-based authentication using x-api-key header
+- **Authentication**: API key-based authentication using x-api-key header found in .env as `API_KEY`
 - **Data Format**: 
   - JSON request/response for main endpoints
   - Plain text response for template GET
@@ -118,6 +126,7 @@ Support for the following AI models with specific identifiers:
 ### 3.9 Performance Requirements
 - Responsive UI during API calls (loading spinners)
 - Progress indicators for long-running operations
+- Cache PDF text extraction
 
 ### 3.10 Security Requirements
 - Environment variable storage for sensitive configuration
@@ -129,6 +138,7 @@ Support for the following AI models with specific identifiers:
 ### 4.1 Usability
 - Clean, intuitive interface with clear navigation
 - Tooltips and help text for guidance
+- Simple top to bottom flow of UI to match streamlit model
 
 ### 4.2 Compatibility
 - Python 3.13.3 
@@ -144,7 +154,8 @@ Support for the following AI models with specific identifiers:
 - Model configuration dictionary for easy additions
 
 ### 4.5 Documentation
-- Code documentation with docstrings
+- Code documentation with comprehensive docstrings
 - Type hints based on Python 3.13.3
 - README.md with setup and usage instructions
 - Configuration guidance in CLAUDE.md
+- Detailed function documentation including arguments and return values

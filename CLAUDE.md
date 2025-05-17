@@ -7,8 +7,12 @@ This is a Streamlit application that interfaces with the Lucy AI server for proc
 ## Key Components
 
 1. **lucy_AI_mock_client.py**: Main application file containing all functionality
+   - Improved error handling with consistent exception catching
+   - Enhanced documentation with comprehensive docstrings
+   - Simplified session state management
+   - OpenAPI integration for endpoint discovery
 2. **requirements.txt**: Python dependencies (streamlit, requests, python-dotenv, PyPDF2)
-3. **.env**: Environment variables for API configuration
+3. **.env**: Environment variables for API configuration (API_ENDPOINT, API_KEY)
 4. **setup.sh**: Virtual environment setup script
 5. **launch_lucy_ai.sh**: Script to launch both Lucy AI server and mock client
 
@@ -68,6 +72,9 @@ Note: All endpoints require trailing slashes.
 - Virtual environment: `.venv` directory
 - UI elements: st.info for usage metadata, escaped dollar signs for markdown
 - No visual dividers between content sections
+- Comprehensive docstrings with Args and Returns documentation
+- Consistent error handling with structured exception catching
+- Simplified session state management using dictionaries
 
 ## Common Operations
 
@@ -81,20 +88,23 @@ Note: All endpoints require trailing slashes.
 
 3. Debug API calls:
    - Check `call_lucy_api()` function
-   - Note: function adds trailing slashes automatically
+   - Enhanced error messages with HTTP status codes
    - Uses `allow_redirects=True` for handling redirects
+   - Improved error handling with detailed responses
 
 4. File handling:
    - Transcripts: Markdown files in `examples/sources/transcripts/`
    - Game plans: PDF files in `examples/sources/game_plans/`
-   - Outputs saved with timestamp and model ID
+   - Outputs saved with model ID (format: `{original_filename}_{model_id}.md`)
 
 ## Error Handling
 
 Common issues and solutions:
 - 401 Unauthorized: Check API_KEY in .env
-- 422 Unprocessable Entity: Verify `model_slug` parameter
+- 422 Unprocessable Entity: Verify `model` parameter
 - 307 Redirect: Endpoints require trailing slashes
+- PDF errors: Handled separately with specific error messages
+- Connection errors: Display clear messages about API connectivity issues
 
 ## Project Structure
 
@@ -116,4 +126,6 @@ lucy_mock_client/
 
 ## OpenAPI Integration
 
-- Use the openapi.json definitions of the lucy_ai_server from the URL http://localhost:8000/openapi.json
+- Fetches and uses the openapi.json definitions from http://localhost:8000/openapi.json
+- Displays available endpoints in the welcome page status check
+- Uses OpenAPI spec for endpoint discovery and validation
