@@ -53,7 +53,8 @@ chmod +x launch_lucy_ai.sh
 2. Select a transcript file from the dropdown
 3. Click "Generate Summary"
 4. View the generated summary with escaped dollar signs for proper markdown rendering
-5. Results are saved to `examples/output/meeting_summary/`
+5. Usage metadata displays in an info box after the content
+6. Results are saved to `examples/output/meeting_summary/`
 
 ### Game Plan Review
 
@@ -63,16 +64,17 @@ chmod +x launch_lucy_ai.sh
 3. PDF text is extracted and cached automatically
 4. Click "Review Game Plan"
 5. View the review with escaped dollar signs for proper markdown rendering
-6. Results are saved to `examples/output/game_plan_review/`
+6. Usage metadata displays in an info box after the content
+7. Results are saved to `examples/output/game_plan_review/`
 
 ### Template Management
 
 1. Navigate to Template Management page
 2. Templates are dynamically loaded from `/template/list/`
 3. Select a template from the dropdown (displaying user-friendly names)
-4. Click "Load Template" to view current template content
+4. Click "Load Template" to view current template content as plain text
 5. Edit the template content in the text area
-6. Click "Save Template" to update
+6. Click "Save Template" to update (sends plain text body with file_name query parameter)
 
 ### Model Selection
 
@@ -118,6 +120,7 @@ Output files are named with format: `{original_filename}_{model_id}.md`
 
 ### Response Format
 - All content responses return a `content` field containing the generated text
+- Responses may include `usage_metadata` field with model usage information
 - Template operations return plain text responses
 
 ## Development

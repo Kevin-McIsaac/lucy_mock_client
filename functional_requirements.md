@@ -23,17 +23,19 @@ To provide a user-friendly interface for processing mortgage-related documents u
 
 #### 3.1.1 Meeting Summary Processing
 - **Upload Meeting Transcripts**: Let the user select markdown files containing meeting transcripts from examples/sources/transcripts. Display the transcript in st.markdown that is inside a closed expander
-- **Generate Meeting Summaries**: Process transcripts through Lucy AI API to create structured meeting summaries. Display the review as formatted markdown
+- **Generate Meeting Summaries**: Process transcripts through Lucy AI API to create structured meeting summaries. Display the content as formatted markdown with escaped dollar signs
+- **Usage Metadata**: Display model usage information in st.info after the summary content
 - **Export Capabilities**: Save summaries to the folder examples/output/meeting_summary using the filename from the transcript
-- **File Naming**: Include source filename, model ID, and timestamp in output names
+- **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
 
 #### 3.1.2 Game Plan Review
 - **Upload PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
 - **File Upload Alternative**: Allow direct PDF upload when no files exist in the source directory  
-- **Extract Text**: Convert PDF content to text for processing and show in closed expander
-- **Review**: Analyze game plans using Lucy AI. Display the review as formatted markdown
+- **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
+- **Review**: Analyze game plans using Lucy AI. Display the content as formatted markdown with escaped dollar signs
+- **Usage Metadata**: Display model usage information in st.info after the review content
 - **Save Reviews**: Save reviews to the folder examples/output/game_plan_review using the filename from the game plan
-- **File Naming**: Include source filename, model ID, and timestamp in output names
+- **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
 
 ### 3.2 User Interface Components
 
@@ -105,6 +107,7 @@ Support for the following AI models with specific identifiers:
   - Plain text response for template GET
   - Plain text body for template PUT
   - All responses contain `content` field with generated text
+  - Responses may include `usage_metadata` field with model usage information
 - **Request Parameters**: 
   - Use `model` for model selection (full model ID with provider prefix)
   - Use `input_text` for both meeting summary and game plan review input

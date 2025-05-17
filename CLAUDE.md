@@ -40,24 +40,34 @@ ruff check lucy_AI_mock_client.py
 The app integrates with Lucy AI server endpoints:
 - `/interview/transcript_to_summary/`: Process meeting transcripts
 - `/game_plan_review/`: Analyze game plans
-- `/template/`: Manage templates
+- `/template/`: Manage templates (GET/PUT with `file_name` query parameter)
+- `/template/list/`: Get available templates
 - `/status/`: Check server health
 
 Note: All endpoints require trailing slashes.
 
 ### API Request Format
 - Authentication: `x-api-key` header
-- Model parameter: `model_slug` (not `model`)
-- Transcript input: `transcript` key
-- Game plan input: `game_plan` key
+- Model parameter: `model` (full model ID with provider prefix)
+- Meeting summary input: `input_text` key
+- Game plan input: `input_text` key
+- Template operations: `file_name` as query parameter
+
+### API Response Format
+- Content field: `content` contains generated text
+- Usage metadata: `usage_metadata` field with model usage information
+- Template GET: Returns plain text
+- Template PUT: Accepts plain text body
 
 ## Development Notes
 
 - Uses Python 3.13.3 with type hints
 - Simple single-file architecture (no classes, just functions)
 - Streamlit st.navigation for multi-page setup using st.Page objects
-- Session state for user preferences and template management
+- Session state for user preferences, template management, and PDF caching
 - Virtual environment: `.venv` directory
+- UI elements: st.info for usage metadata, escaped dollar signs for markdown
+- No visual dividers between content sections
 
 ## Common Operations
 
