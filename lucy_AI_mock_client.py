@@ -41,7 +41,8 @@ for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUT
 
 def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None) -> Union[Dict[str, Any], str]:
     """Make API calls to Lucy AI server."""
-    # Ensure endpoint has trailing slash if it's just the endpoint name
+
+    # Ensure endpoint has trailing slash for other endpoints
     if endpoint and not endpoint.endswith('/'):
         endpoint += '/'
     
@@ -90,7 +91,7 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
 def check_server_status() -> bool:
     """Check if Lucy AI server is available."""
     try:
-        response = call_lucy_api("/status")
+        response = call_lucy_api("/status/")
         return bool(response)  # Just check if we got a response
     except:
         return False
@@ -159,7 +160,7 @@ def meeting_summary_page():
                 "model": model_id
             }
             
-            response = call_lucy_api("/interview/transcript_to_summary", method="POST", data=data)
+            response = call_lucy_api("/interview/transcript_to_summary/", method="POST", data=data)
             
             if "content" in response:
                 # Display summary
@@ -236,7 +237,7 @@ def game_plan_review_page():
                     "model": model_id
                 }
                 
-                response = call_lucy_api("/game_plan_review", method="POST", data=data)
+                response = call_lucy_api("/game_plan_review/", method="POST", data=data)
                 
                 if "content" in response:
                     # Display review
@@ -261,26 +262,31 @@ def template_management_page():
     """Handle template viewing and editing."""
     st.title("Template Management")
     
-    # Use hardcoded list of templates based on the response structure you provided
-    templates_dict = {
-        "/game_plan_review/": "helpers/game_plan_review/prompt.md",
-        "/interview/transcript_to_summary/": "helpers/interview/transcript_to_summary.md",
-        "/BID_notes/": "helpers/BID_notes/prompt.md"
-    }
+    # Get list of templates from the API
+    template_list_response = call_lucy_api("/template/list/", method="GET")
     
-    template_options = list(templates_dict.values())
-    
-    template_display_names = {
-        "helpers/game_plan_review/prompt.md": "Game Plan Review",
-        "helpers/interview/transcript_to_summary.md": "Meeting Summary",
-        "helpers/BID_notes/prompt.md": "BID Notes"
-    }
-    
-    template_name = st.selectbox(
-        "Select Template",
-        options=template_options,
-        format_func=lambda x: template_display_names.get(x, x)
-    )
+    if template_list_response and "templates" in template_list_response:
+        templates_dict = template_list_response["templates"]
+        
+        # Create a mapping from display names to filenames
+        template_mapping = {}
+        for key, filename in templates_dict.items():
+            # Use the key (e.g., "/game_plan_review/") as the display name
+            display_name = key.strip("/").replace("_", " ").title()
+            template_mapping[display_name] = filename
+        
+        # Select template by display name
+        selected_display = st.selectbox(
+            "Select Template",
+            options=list(template_mapping.keys())
+        )
+        
+        # Get the actual filename for the selected template
+        template_name = template_mapping[selected_display]
+    else:
+        st.error("Failed to fetch template list")
+        # Fallback to manual entry
+        template_name = st.text_input("Enter template filename manually:")
     
     if template_name:
         # Get current template
