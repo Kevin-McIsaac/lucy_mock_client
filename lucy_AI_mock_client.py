@@ -264,7 +264,6 @@ def template_management_page():
     # Use hardcoded list of templates based on the response structure you provided
     templates_dict = {
         "/game_plan_review/": "helpers/game_plan_review/prompt.md",
-        "/interview/transcript_to_lead/": "helpers/interview/prompt_meeting_to_lead.json",
         "/interview/transcript_to_summary/": "helpers/interview/transcript_to_summary.md",
         "/BID_notes/": "helpers/BID_notes/prompt.md"
     }
@@ -273,7 +272,6 @@ def template_management_page():
     
     template_display_names = {
         "helpers/game_plan_review/prompt.md": "Game Plan Review",
-        "helpers/interview/prompt_meeting_to_lead.json": "Meeting to Lead",
         "helpers/interview/transcript_to_summary.md": "Meeting Summary",
         "helpers/BID_notes/prompt.md": "BID Notes"
     }
