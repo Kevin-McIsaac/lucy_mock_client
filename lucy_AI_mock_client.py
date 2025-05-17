@@ -415,7 +415,7 @@ def template_management_page():
             template_content = st.text_area(
                 "Template Content",
                 value=st.session_state.templates[template_name],
-                height=400
+                height=300
             )
             
             # Save template

@@ -15,6 +15,7 @@ This is a Streamlit application that interfaces with the Lucy AI server for proc
 3. **.env**: Environment variables for API configuration (API_ENDPOINT, API_KEY)
 4. **setup.sh**: Virtual environment setup script
 5. **launch_lucy_ai.sh**: Script to launch both Lucy AI server and mock client
+6. **cleanup_processes.sh**: Script to handle port conflicts and kill stuck processes
 
 ## Environment Variables
 
@@ -129,3 +130,15 @@ lucy_mock_client/
 - Fetches and uses the openapi.json definitions from http://localhost:8000/openapi.json
 - Displays available endpoints in the welcome page status check
 - Uses OpenAPI spec for endpoint discovery and validation
+
+## Utility Scripts
+
+1. **setup.sh** - Sets up the virtual environment and installs dependencies
+2. **launch_lucy_ai.sh** - Starts both Lucy AI server and mock client
+   - Automatically cleans up existing processes before starting
+   - Handles proper shutdown with signal trapping
+   - Stores PIDs for process management
+3. **cleanup_processes.sh** - Kills existing processes and frees port 8000
+   - Finds processes by port number
+   - Force kills stuck processes
+   - Verifies port is free before exiting

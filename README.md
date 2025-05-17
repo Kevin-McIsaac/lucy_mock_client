@@ -9,13 +9,16 @@ A Streamlit-based web application for processing mortgage documents using AI-pow
 - Support for multiple AI models (Claude, GPT, Gemini, Llama)
 - Template management with dynamic template selection
 - Shared model selection across all pages
-- Server status checking
-- PDF text extraction and caching
+- Server status checking with OpenAPI spec display
+- PDF text extraction and caching (supports encrypted PDFs)
+- Enhanced error handling with detailed messages
+- Automatic process cleanup to prevent port conflicts
 
 ## Prerequisites
 
 - Python 3.13.3 or higher
 - Lucy AI server running (typically at http://localhost:8000)
+- PyCryptodome for encrypted PDF support
 
 ## Setup
 
@@ -43,6 +46,12 @@ Use the provided launch script to start both components:
 ```bash
 chmod +x launch_lucy_ai.sh
 ./launch_lucy_ai.sh
+```
+
+If you encounter port conflicts, use the cleanup script:
+```bash
+chmod +x cleanup_processes.sh
+./cleanup_processes.sh
 ```
 
 ## Usage
@@ -136,6 +145,8 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines and troubleshooting.
 3. **Connection Error**: Ensure Lucy AI server is running at the configured endpoint
 4. **PDF Loading Spinner**: PDF text is cached after first extraction to avoid re-processing
 5. **Dollar Sign Display**: Dollar signs in responses are automatically escaped for markdown
+6. **Encrypted PDFs**: Install pycryptodome if you see "PyCryptodome is required" error
+7. **Port Already in Use**: Run `./cleanup_processes.sh` to kill existing processes
 
 ### API Endpoints
 
@@ -145,8 +156,9 @@ The application connects to the following Lucy AI server endpoints:
 - `/game_plan_review/` - Game plan analysis
 - `/template/` - Template load/save with `file_name` query parameter
 - `/template/list/` - Get available templates
+- `/openapi.json` - OpenAPI specification for endpoint discovery
 
-Note: All endpoints use trailing slashes.
+Note: All endpoints use trailing slashes (except /openapi.json).
 
 ## License
 

@@ -46,11 +46,12 @@ To provide a user-friendly interface for processing mortgage-related documents u
 #### 3.2.2 Common Controls
 - **Model Selection**: Choose from multiple AI models in sidebar (shared across pages)
 - **Template Editor**: View and modify templates with dynamic list from API
-- **File Upload**: Upload documents for processing (PDF support)
+- **File Upload**: Upload documents for processing (PDF support, including encrypted)
 - **Process Buttons**: Primary buttons for initiating AI processing
 - **Save Functions**: Automatic export to local file system
-- **Server Status Check**: Verify Lucy AI server connectivity
-- **Dollar Sign Escaping**: Automatic escaping for proper markdown rendering. 
+- **Server Status Check**: Verify Lucy AI server connectivity and display OpenAPI endpoints
+- **Dollar Sign Escaping**: Automatic escaping using regex pattern for proper markdown rendering
+- **Process Cleanup**: Automatic cleanup of existing processes to prevent port conflicts 
 
 ### 3.3 AI Model Support
 Support for the following AI models with specific identifiers:
@@ -132,6 +133,7 @@ and displays available endpoints from the OpenAPI spec.
 - Environment variable storage for sensitive configuration
 - API key management through headers
 - Use .env file with API_ENDPOINT and API_KEY variables
+- Support for encrypted PDF files with PyCryptodome
 
 ## 4. Non-Functional Requirements
 
@@ -147,6 +149,8 @@ and displays available endpoints from the OpenAPI spec.
 ### 4.3 Environment
 - Virtual environment support through setup.sh script
 - Requirements file for dependency management
+- Cleanup script for handling process conflicts
+- Launch script with robust error handling
 
 ### 4.4 Extensibility
 - Single Python file implementation (lucy_AI_mock_client.py)
