@@ -7,6 +7,7 @@ from pathlib import Path
 import PyPDF2
 from dotenv import load_dotenv
 from datetime import datetime
+import re
 
 # Load environment variables
 load_dotenv()
@@ -159,7 +160,7 @@ def meeting_summary_page():
             if "content" in response:
                 # Display summary
                 # Escape dollar signs for markdown
-                escaped_content = response["content"].replace("$", "\\$")
+                escaped_content = re.sub(r'(?<!\\)\$', r'\$', response["content"])
                 st.markdown(escaped_content)
                 
                 # Display usage metadata if available
@@ -239,7 +240,7 @@ def game_plan_review_page():
                 if "content" in response:
                     # Display review
                     # Escape dollar signs for markdown
-                    escaped_content = response["content"].replace("$", "\\$")
+                    escaped_content = re.sub(r'(?<!\\)\$', r'\$', response["content"])
                     st.markdown(escaped_content)
                     
                     # Display usage metadata if available
