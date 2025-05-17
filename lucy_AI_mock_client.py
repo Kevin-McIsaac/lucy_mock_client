@@ -158,7 +158,11 @@ def extract_pdf_text(pdf_file) -> str:
         st.error(f"PDF Read Error: {str(e)}")
         return ""
     except Exception as e:
-        st.error(f"Unexpected Error reading PDF: {str(e)}")
+        error_msg = str(e)
+        if "PyCryptodome is required" in error_msg:
+            st.error("This PDF is encrypted. Please run: pip install pycryptodome")
+        else:
+            st.error(f"Unexpected Error reading PDF: {error_msg}")
         return ""
 
 def welcome_page():

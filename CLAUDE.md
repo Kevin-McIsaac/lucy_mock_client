@@ -11,7 +11,7 @@ This is a Streamlit application that interfaces with the Lucy AI server for proc
    - Enhanced documentation with comprehensive docstrings
    - Simplified session state management
    - OpenAPI integration for endpoint discovery
-2. **requirements.txt**: Python dependencies (streamlit, requests, python-dotenv, PyPDF2)
+2. **requirements.txt**: Python dependencies (streamlit, requests, python-dotenv, PyPDF2, pycryptodome)
 3. **.env**: Environment variables for API configuration (API_ENDPOINT, API_KEY)
 4. **setup.sh**: Virtual environment setup script
 5. **launch_lucy_ai.sh**: Script to launch both Lucy AI server and mock client
