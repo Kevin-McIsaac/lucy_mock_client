@@ -1,13 +1,14 @@
 # Lucy AI Mock Client
 
-A Streamlit-based web application for processing mortgage documents using AI-powered analysis.
+A Streamlit-based web application for processing mortgage documents using AI-powered analysis with a compact, streamlined UI.
 
 ## Features
 
 - Process meeting transcripts into actionable summaries
 - Review mortgage game plans for compliance issues
 - Support for multiple AI models (Claude, GPT, Gemini, Llama)
-- Template management with dynamic template selection
+- Template management with automatic template loading
+- Compact UI with optimized spacing and layout
 - Shared model selection across all pages
 - Server status checking with OpenAPI spec display
 - PDF text extraction and caching (supports encrypted PDFs)
@@ -82,9 +83,9 @@ chmod +x cleanup_processes.sh
 ### Template Management
 
 1. Navigate to Template Management page
-2. Templates are dynamically loaded from `/template/list/`
-3. Select a template from the dropdown (displaying user-friendly names)
-4. Click "Load Template" to view current template content as plain text
+2. Templates are dynamically loaded from `/template/list/` as a list of filenames
+3. Select a template from the dropdown (displaying user-friendly names created from filename stems)
+4. Template content is automatically loaded when a template is selected
 5. Edit the template content in the text area
 6. Click "Save Template" to update (sends plain text body with file_name query parameter)
 7. Click "Pull Request" to create a pull request (sends POST with empty body and file_name parameter)
@@ -164,7 +165,7 @@ The application connects to the following Lucy AI server endpoints:
   - GET: Load template (returns plain text)
   - PUT: Save template (accepts plain text body)
   - POST: Create pull request (accepts empty body)
-- `/template/list/` - Get available templates
+- `/template/list/` - Get available templates (returns a list of filenames)
 - `/openapi.json` - OpenAPI specification for endpoint discovery
 
 Note: All endpoints use trailing slashes (except /openapi.json).

@@ -62,6 +62,7 @@ Note: All endpoints require trailing slashes.
 ### API Response Format
 - Content field: `content` contains generated text
 - Usage metadata: `usage_metadata` field with model usage information
+- Template list: Returns a list of template filenames
 - Template GET: Returns plain text
 - Template PUT: Accepts plain text body
 - Template POST: Accepts empty body for Pull Request creation
@@ -71,6 +72,7 @@ Note: All endpoints require trailing slashes.
 - Uses Python 3.13.3 with type hints
 - Simple single-file architecture (no classes, just functions)
 - Streamlit st.navigation for multi-page setup using st.Page objects
+- Page headers use st.header instead of st.title for more compact layout
 - Session state for user preferences, template management, and PDF caching
 - Virtual environment: `.venv` directory
 - UI elements: st.info for usage metadata, escaped dollar signs for markdown
@@ -78,6 +80,7 @@ Note: All endpoints require trailing slashes.
 - Comprehensive docstrings with Args and Returns documentation
 - Consistent error handling with structured exception catching
 - Simplified session state management using dictionaries
+- Custom CSS applied to reduce page spacing and create a more compact UI
 
 ## Common Operations
 
@@ -103,10 +106,12 @@ Note: All endpoints require trailing slashes.
    - Game plan reviews with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
 
 5. Template management:
-   - Load template: GET request with `file_name` query parameter
+   - Templates list: `/template/list/` returns a list of template filenames
+   - Load template: GET request with `file_name` query parameter 
    - Save template: PUT request with plain text body and `file_name` query parameter
    - Pull Request: POST request with empty body and `file_name` query parameter
    - UI uses two-column layout for Save Template (primary) and Pull Request (secondary) buttons
+   - Auto-loading templates when selected from dropdown
 
 ## Error Handling
 
