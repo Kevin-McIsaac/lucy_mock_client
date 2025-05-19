@@ -1,12 +1,10 @@
 import streamlit as st
 import os
-import json
 import requests
 from typing import Optional, Dict, Any, Union
 from pathlib import Path
 import PyPDF2
 from dotenv import load_dotenv
-from datetime import datetime
 import re
 
 # Load environment variables
@@ -213,7 +211,7 @@ def meeting_summary_page():
     - Save summaries to examples/output/meeting_summary/
     - Display usage metadata from the API response
     """
-    st.title("Meeting Summary Generator")
+    st.header("Meeting Transcript Summary")
     
     # Use shared model from session state
     model_id = st.session_state.selected_model
@@ -281,15 +279,14 @@ def game_plan_review_page():
     - Save reviews to examples/output/game_plan_review/
     - Display usage metadata from the API response
     """
-    st.title("Game Plan Review")
+  
+    st.header("Game Plan Review")
     
-    # Use shared model from session state
+    # Use shared model and initialize cache
     model_id = st.session_state.selected_model
-    
-    # Initialize PDF cache in session state
     if "pdf_cache" not in st.session_state:
         st.session_state.pdf_cache = {}
-    
+        
     # Discover available game plan review endpoints
     available_endpoints = {}
     openapi_spec = fetch_openapi_spec()
@@ -309,10 +306,9 @@ def game_plan_review_page():
             "Standard Review": "/game_plan_review/",
         }
     
-    # Add toggle for review type
-    st.write("Choose Review Type:")
+    # Add toggle for review type in a more compact layout
     review_type = st.radio(
-        "Select review method:",
+        "Review method:",
         options=list(available_endpoints.keys()),
         horizontal=True,
         help="Different review methods provide different types of analysis for your game plan."
@@ -399,13 +395,13 @@ def template_management_page():
     """Handle template viewing and editing.
     
     Provides interface for managing Lucy AI templates:
-    - Fetches available templates from /template/list/ endpoint
-    - Displays templates with human-readable names
+    - Fetches available templates from /template/list/ endpoint as a list of filenames
+    - Creates display names from filename stems
     - Loads template content for viewing/editing
     - Saves modified templates back to server
     - Uses session state for template caching
     """
-    st.title("Template Management")
+    st.header("Template Management")
     
     # Initialize template storage in session state
     if "templates" not in st.session_state:
@@ -414,40 +410,46 @@ def template_management_page():
     # Get list of templates from the API
     template_list_response = call_lucy_api("/template/list/", method="GET")
     
-    if template_list_response and "templates" in template_list_response:
-        templates_dict = template_list_response["templates"]
-        
+    if template_list_response and isinstance(template_list_response, list):  # Check if we got a list response
         # Create a mapping from display names to filenames
         template_mapping = {}
-        for key, filename in templates_dict.items():
-            # Use the key (e.g., "/game_plan_review/") as the display name
-            display_name = key.strip("/").replace("_", " ").title()
+        
+        # Process the list of filenames
+        for filename in template_list_response:
+            # Create a user-friendly display name from the filename
+            display_name = Path(filename).stem.replace("_", " ").title()
             template_mapping[display_name] = filename
         
-        # Select template by display name
-        selected_display = st.selectbox(
-            "Select Template",
-            options=list(template_mapping.keys())
-        )
-        
-        # Get the actual filename for the selected template
-        template_name = template_mapping[selected_display]
+        if template_mapping:  # Only proceed if we have templates
+            # Select template by display name, start with no selection
+            selected_display = st.selectbox(
+                "Select Template",
+                options=["Select a template..."] + list(template_mapping.keys())
+            )
+            
+            # Get the actual filename for the selected template if a real template is selected
+            if selected_display != "Select a template...":
+                template_name = template_mapping[selected_display]
+                
+                # Automatically load template when selection changes
+                if template_name not in st.session_state.templates:
+                    params = {"file_name": template_name}
+                    response = call_lucy_api("/template/", params=params, return_text=True)
+                    if response:
+                        st.session_state.templates[template_name] = response
+                    else:
+                        st.error("Failed to load template")
+            else:
+                template_name = None
+        else:
+            st.warning("No templates found in the response list")
+            template_name = None
     else:
-        st.error("Failed to fetch template list")
-        # Fallback to manual entry
-        template_name = st.text_input("Enter template filename manually:")
+        st.error("Failed to fetch template list or response is not in expected list format")
+        template_name = None
     
     if template_name:
-        # Get current template
-        if st.button("Load Template"):
-            params = {"file_name": template_name}
-            response = call_lucy_api("/template/", params=params, return_text=True)
-            if response:
-                st.session_state.templates[template_name] = response
-            else:
-                st.error("Failed to load template")
-        
-        # Display and edit template
+        # Display and edit template if it's in session state
         if template_name in st.session_state.templates:
             template_content = st.text_area(
                 "Template Content",
@@ -484,6 +486,8 @@ def template_management_page():
                                 st.info(response["detail"])
                     else:
                         st.error("Failed to create pull request")
+    else:
+        pass  # No template selected
 
 def main():
     """Main application entry point.
