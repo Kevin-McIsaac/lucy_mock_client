@@ -307,7 +307,6 @@ def game_plan_review_page():
     if not available_endpoints:
         available_endpoints = {
             "Standard Review": "/game_plan_review/",
-            "File Review Checklist": "/game_plan_review/file_review_checklist/"
         }
     
     # Add toggle for review type
