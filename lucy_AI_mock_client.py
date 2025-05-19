@@ -290,6 +290,35 @@ def game_plan_review_page():
     if "pdf_cache" not in st.session_state:
         st.session_state.pdf_cache = {}
     
+    # Discover available game plan review endpoints
+    available_endpoints = {}
+    openapi_spec = fetch_openapi_spec()
+    
+    if openapi_spec and "paths" in openapi_spec:
+        for path, methods in openapi_spec["paths"].items():
+            if path.startswith("/game_plan_review/"):
+                # Extract a friendly name from the path
+                endpoint_name = path.replace("/game_plan_review/", "").replace("/", "").replace("_", " ").title()
+                if not endpoint_name:
+                    endpoint_name = "Standard Review"
+                available_endpoints[endpoint_name] = path
+    
+    # If no endpoints found or OpenAPI unavailable, use defaults
+    if not available_endpoints:
+        available_endpoints = {
+            "Standard Review": "/game_plan_review/",
+            "File Review Checklist": "/game_plan_review/file_review_checklist/"
+        }
+    
+    # Add toggle for review type
+    st.write("Choose Review Type:")
+    review_type = st.radio(
+        "Select review method:",
+        options=list(available_endpoints.keys()),
+        horizontal=True,
+        help="Different review methods provide different types of analysis for your game plan."
+    )
+    
     # File selection
     game_plan_files = list(GAME_PLANS_DIR.glob("*.pdf"))
     if not game_plan_files:
@@ -338,7 +367,10 @@ def game_plan_review_page():
                     "model": model_id
                 }
                 
-                response = call_lucy_api("/game_plan_review/", method="POST", data=data)
+                # Choose endpoint based on review type
+                endpoint = available_endpoints[review_type]
+                
+                response = call_lucy_api(endpoint, method="POST", data=data)
                 
                 if "content" in response:
                     # Display review
@@ -352,7 +384,9 @@ def game_plan_review_page():
                     
                     # Save review
                     safe_model_id = model_id.replace('/', '-').replace(':', '-')
-                    output_filename = f"{Path(filename).stem}_{safe_model_id}.md"
+                    # Create suffix from endpoint name
+                    endpoint_suffix = "_" + review_type.lower().replace(" ", "_") if review_type != "Standard Review" else ""
+                    output_filename = f"{Path(filename).stem}_{safe_model_id}{endpoint_suffix}.md"
                     output_path = REVIEW_OUTPUT_DIR / output_filename
                     
                     with open(output_path, "w") as f:
@@ -360,7 +394,7 @@ def game_plan_review_page():
                     
                     st.success(f"Review saved to {output_path}")
                 else:
-                    st.error("Failed to generate review")
+                    st.error(f"Failed to generate review using endpoint: {endpoint}")
 
 def template_management_page():
     """Handle template viewing and editing.
