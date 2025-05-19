@@ -164,6 +164,3 @@ The application connects to the following Lucy AI server endpoints:
 
 Note: All endpoints use trailing slashes (except /openapi.json).
 
-## License
-
-[Add your license information here]
