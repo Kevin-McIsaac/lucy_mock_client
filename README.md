@@ -69,12 +69,15 @@ chmod +x cleanup_processes.sh
 
 1. Place game plan files (.pdf) in `examples/sources/game_plans/`
    - Or upload a PDF directly if no files exist
-2. Select a file from the dropdown
-3. PDF text is extracted and cached automatically
-4. Click "Review Game Plan"
-5. View the review with escaped dollar signs for proper markdown rendering
-6. Usage metadata displays in an info box after the content
-7. Results are saved to `examples/output/game_plan_review/`
+2. Select a review type from available endpoints
+   - Automatically discovers all available `/game_plan_review/*` endpoints from the OpenAPI spec
+   - Falls back to standard endpoints if OpenAPI is unavailable
+3. Select a file from the dropdown
+4. PDF text is extracted and cached automatically
+5. Click "Review Game Plan"
+6. View the review with escaped dollar signs for proper markdown rendering
+7. Usage metadata displays in an info box after the content
+8. Results are saved to `examples/output/game_plan_review/` with appropriate suffixes based on review type
 
 ### Template Management
 
@@ -105,6 +108,7 @@ examples/
 ```
 
 Output files are named with format: `{original_filename}_{model_id}.md`
+Game plan reviews with alternative endpoints include a suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
 
 ## Available AI Models
 
@@ -154,7 +158,8 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines and troubleshooting.
 The application connects to the following Lucy AI server endpoints:
 - `/status/` - Health check
 - `/interview/transcript_to_summary/` - Meeting summary generation
-- `/game_plan_review/` - Game plan analysis
+- `/game_plan_review/` - Game plan analysis (standard review)
+- `/game_plan_review/*` - Additional game plan review endpoints (automatically discovered)
 - `/template/` - Template load/save/pull request with `file_name` query parameter
   - GET: Load template (returns plain text)
   - PUT: Save template (accepts plain text body)

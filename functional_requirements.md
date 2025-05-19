@@ -31,10 +31,16 @@ To provide a user-friendly interface for processing mortgage-related documents u
 #### 3.1.2 Game Plan Review
 - **Upload PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
 - **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
-- **Review**: Analyze game plans using Lucy AI. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
+- **Review Type Selection**: Allow users to choose from dynamically discovered review endpoints
+  - Automatically discover all available `/game_plan_review/*` endpoints from OpenAPI spec
+  - Provide user-friendly names for each endpoint
+  - Fall back to standard endpoints if OpenAPI is unavailable
+- **Review**: Analyze game plans using selected endpoint. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
 - **Usage Metadata**: Display model usage information in st.info after the review content
 - **Save Reviews**: Save reviews to the folder examples/output/game_plan_review using the filename from the game plan
-- **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
+- **File Naming**: 
+  - Standard review: `{original_filename}_{model_id}.md`
+  - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 
 ### 3.2 User Interface Components
 
@@ -83,7 +89,9 @@ Support for the following AI models with specific identifiers:
 - **Output Directory Structure**: Organized storage in `examples/output/`
   - `meeting_summary/`: Processed transcript summaries
   - `game_plan_review/`: Game plan compliance reviews
-- **File Naming**: Format: `{original_filename}_{model_id}.md` (no timestamps)
+- **File Naming**: 
+  - Standard format: `{original_filename}_{model_id}.md` (no timestamps)
+  - Alternative game plan endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 - **PDF Caching**: Extracted PDF text is cached in session state to avoid reprocessing
 
 ### 3.6 Session State Management
@@ -105,9 +113,10 @@ each endpoint at `http://localhost:8000/openapi.json`. This should
 take precedence over the specifications below. The client now fetches
 and displays available endpoints from the OpenAPI spec.
 - **Endpoints**:
-  - Use `API_ENDPOINT` from .env as teh base of the API url
+  - Use `API_ENDPOINT` from .env as the base of the API url
   - `/interview/transcript_to_summary/`: Generate meeting summaries
-  - `/game_plan_review/`: Analyze game plans for compliance
+  - `/game_plan_review/`: Analyze game plans for compliance (standard review)
+  - `/game_plan_review/*`: Additional game plan review endpoints (dynamically discovered)
   - `/template/`: GET/PUT/POST template management with `file_name` query parameter
   - `/template/list/`: GET list of available templates
   - `/status/`: Server health check

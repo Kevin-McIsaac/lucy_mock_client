@@ -44,7 +44,8 @@ ruff check lucy_AI_mock_client.py
 
 The app integrates with Lucy AI server endpoints:
 - `/interview/transcript_to_summary/`: Process meeting transcripts
-- `/game_plan_review/`: Analyze game plans
+- `/game_plan_review/`: Analyze game plans (standard review)
+- `/game_plan_review/*`: Additional game plan review endpoints (dynamically discovered from OpenAPI spec)
 - `/template/`: Manage templates (GET/PUT/POST with `file_name` query parameter)
 - `/template/list/`: Get available templates
 - `/status/`: Check server health
@@ -99,6 +100,7 @@ Note: All endpoints require trailing slashes.
    - Transcripts: Markdown files in `examples/sources/transcripts/`
    - Game plans: PDF files in `examples/sources/game_plans/`
    - Outputs saved with model ID (format: `{original_filename}_{model_id}.md`)
+   - Game plan reviews with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
 
 5. Template management:
    - Load template: GET request with `file_name` query parameter
@@ -138,6 +140,8 @@ lucy_mock_client/
 - Fetches and uses the openapi.json definitions from http://localhost:8000/openapi.json
 - Displays available endpoints in the welcome page status check
 - Uses OpenAPI spec for endpoint discovery and validation
+- Dynamically discovers game plan review endpoints (paths starting with `/game_plan_review/`)
+- Provides user-friendly names for discovered endpoints
 
 ## Utility Scripts
 
