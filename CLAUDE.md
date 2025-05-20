@@ -46,6 +46,8 @@ The app integrates with Lucy AI server endpoints:
 - `/interview/transcript_to_summary/`: Process meeting transcripts
 - `/game_plan_review/`: Analyze game plans (standard review)
 - `/game_plan_review/*`: Additional game plan review endpoints (dynamically discovered from OpenAPI spec)
+- `/BID_notes/`: Generate BID notes from game plans
+- `/BID_notes/*`: Additional BID notes endpoints (dynamically discovered from OpenAPI spec)
 - `/template/`: Manage templates (GET/PUT/POST with `file_name` query parameter)
 - `/template/list/`: Get available templates
 - `/status/`: Check server health
@@ -57,6 +59,7 @@ Note: All endpoints require trailing slashes.
 - Model parameter: `model` (full model ID with provider prefix)
 - Meeting summary input: `input_text` key
 - Game plan input: `input_text` key
+- BID notes input: `input_text` key
 - Template operations: `file_name` as query parameter
 
 ### API Response Format
@@ -104,6 +107,7 @@ Note: All endpoints require trailing slashes.
    - Game plans: PDF files in `examples/sources/game_plans/`
    - Outputs saved with model ID (format: `{original_filename}_{model_id}.md`)
    - Game plan reviews with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
+   - BID notes with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
    - Success messages include GitHub repository URLs for quick access to saved files
 
 5. Template management:
@@ -137,7 +141,8 @@ lucy_mock_client/
 │   │   └── game_plans/      # Input PDF files
 │   └── output/
 │       ├── meeting_summary/ # Generated summaries
-│       └── game_plan_review/# Generated reviews
+│       ├── game_plan_review/# Generated reviews
+│       └── BID_notes/       # Generated BID notes
 └── .venv/                   # Virtual environment
 ```
 
@@ -147,6 +152,7 @@ lucy_mock_client/
 - Displays available endpoints in the welcome page status check
 - Uses OpenAPI spec for endpoint discovery and validation
 - Dynamically discovers game plan review endpoints (paths starting with `/game_plan_review/`)
+- Dynamically discovers BID notes endpoints (paths starting with `/BID_notes/`)
 - Provides user-friendly names for discovered endpoints
 
 ## Utility Scripts

@@ -6,6 +6,7 @@ A Streamlit-based web application for processing mortgage documents using AI-pow
 
 - Process meeting transcripts into actionable summaries
 - Review mortgage game plans for compliance issues
+- Generate BID notes from game plans for enhanced analysis
 - Support for multiple AI models (Claude, GPT, Gemini, Llama)
 - Template management with automatic template loading
 - Compact UI with optimized spacing and layout
@@ -80,6 +81,20 @@ chmod +x cleanup_processes.sh
 7. Usage metadata displays in an info box after the content
 8. Results are saved to `examples/output/game_plan_review/` with appropriate suffixes based on review type and clickable GitHub repository links
 
+### BID Notes Generation
+
+1. Place game plan files (.pdf) in `examples/sources/game_plans/`
+   - Or upload a PDF directly if no files exist
+2. Select a notes type from available endpoints
+   - Automatically discovers all available `/BID_notes/*` endpoints from the OpenAPI spec
+   - Falls back to standard endpoints if OpenAPI is unavailable
+3. Select a file from the dropdown
+4. PDF text is extracted and cached automatically
+5. Click "Generate BID Notes"
+6. View the notes with escaped dollar signs for proper markdown rendering
+7. Usage metadata displays in an info box after the content
+8. Results are saved to `examples/output/BID_notes/` with appropriate suffixes based on notes type and clickable GitHub repository links
+
 ### Template Management
 
 1. Navigate to Template Management page
@@ -105,11 +120,12 @@ examples/
 │   └── game_plans/       # Game plan PDF files
 └── output/
     ├── meeting_summary/  # Generated meeting summaries
-    └── game_plan_review/ # Generated game plan reviews
+    ├── game_plan_review/ # Generated game plan reviews
+    └── BID_notes/        # Generated BID notes
 ```
 
 Output files are named with format: `{original_filename}_{model_id}.md`
-Game plan reviews with alternative endpoints include a suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
+Game plan reviews and BID notes with alternative endpoints include a suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
 
 ## Available AI Models
 
@@ -131,6 +147,7 @@ Game plan reviews with alternative endpoints include a suffix: `{original_filena
 ### Request Parameters
 - Meeting Summary: `input_text` (transcript content) and `model` (model ID)
 - Game Plan Review: `input_text` (PDF text) and `model` (model ID)
+- BID Notes: `input_text` (PDF text) and `model` (model ID)
 - Templates: `file_name` as query parameter
 
 ### Response Format
@@ -161,6 +178,8 @@ The application connects to the following Lucy AI server endpoints:
 - `/interview/transcript_to_summary/` - Meeting summary generation
 - `/game_plan_review/` - Game plan analysis (standard review)
 - `/game_plan_review/*` - Additional game plan review endpoints (automatically discovered)
+- `/BID_notes/` - BID notes generation (standard notes)
+- `/BID_notes/*` - Additional BID notes endpoints (automatically discovered)
 - `/template/` - Template load/save/pull request with `file_name` query parameter
   - GET: Load template (returns plain text)
   - PUT: Save template (accepts plain text body)

@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-The Lucy AI Mock Client is a Streamlit-based web application that serves as a frontend interface for the Lucy AI server. It provides mortgage professionals with tools to process meeting transcripts and review mortgage game plans. The application  supports multiple AI models for processing.
+The Lucy AI Mock Client is a Streamlit-based web application that serves as a frontend interface for the Lucy AI server. It provides mortgage professionals with tools to process meeting transcripts, review mortgage game plans, and generate BID notes. The application supports multiple AI models for processing.
 
 ## 2. System Overview
 
@@ -10,6 +10,7 @@ The Lucy AI Mock Client is a Streamlit-based web application that serves as a fr
 To provide a user-friendly interface for processing mortgage-related documents using AI-powered analysis, enabling professionals to:
 - Summarise meeting transcripts into actionable meeting summaries 
 - Review mortgage game plans for compliance issues
+- Generate BID notes from game plans for enhanced analysis
 
 ### 2.2 Architecture
 - **Frontend**: Streamlit web application with multi-page navigation using st.navigation and st.Page
@@ -42,11 +43,25 @@ To provide a user-friendly interface for processing mortgage-related documents u
   - Standard review: `{original_filename}_{model_id}.md`
   - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 
+#### 3.1.3 BID Notes Generation
+- **Select PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
+- **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
+- **Notes Type Selection**: Allow users to choose from dynamically discovered BID notes endpoints
+  - Automatically discover all available `/BID_notes/*` endpoints from OpenAPI spec
+  - Provide user-friendly names for each endpoint
+  - Fall back to standard endpoints if OpenAPI is unavailable
+- **Generate Notes**: Analyze game plans using selected endpoint. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
+- **Usage Metadata**: Display model usage information in st.info after the notes content
+- **Save Notes**: Save notes to the folder examples/output/BID_notes using the filename from the game plan
+- **File Naming**: 
+  - Standard notes: `{original_filename}_{model_id}.md`
+  - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
+
 ### 3.2 User Interface Components
 
 #### 3.2.1 Navigation
 - Multi-page application using st.navigation and st.Page
-- Four main pages: Welcome, Meeting Summary, Game Plan Review, Template Management
+- Five main pages: Welcome, Meeting Summary, Game Plan Review, BID Notes, Template Management
 - Sidebar with global model selection that persists across pages
 
 #### 3.2.2 Common Controls
@@ -89,6 +104,7 @@ Support for the following AI models with specific identifiers:
 - **Output Directory Structure**: Organized storage in `examples/output/`
   - `meeting_summary/`: Processed transcript summaries
   - `game_plan_review/`: Game plan compliance reviews
+  - `BID_notes/`: Generated BID notes
 - **File Naming**: 
   - Standard format: `{original_filename}_{model_id}.md` (no timestamps)
   - Alternative game plan endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
@@ -117,6 +133,8 @@ and displays available endpoints from the OpenAPI spec.
   - `/interview/transcript_to_summary/`: Generate meeting summaries
   - `/game_plan_review/`: Analyze game plans for compliance (standard review)
   - `/game_plan_review/*`: Additional game plan review endpoints (dynamically discovered)
+  - `/BID_notes/`: Generate BID notes from game plans (standard notes)
+  - `/BID_notes/*`: Additional BID notes endpoints (dynamically discovered)
   - `/template/`: GET/PUT/POST template management with `file_name` query parameter
   - `/template/list/`: GET list of available templates
   - `/status/`: Server health check

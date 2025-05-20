@@ -31,9 +31,10 @@ TRANSCRIPTS_DIR = Path("examples/sources/transcripts")
 GAME_PLANS_DIR = Path("examples/sources/game_plans")
 SUMMARY_OUTPUT_DIR = Path("examples/output/meeting_summary")
 REVIEW_OUTPUT_DIR = Path("examples/output/game_plan_review")
+BID_NOTES_OUTPUT_DIR = Path("examples/output/BID_notes")
 
 # Create directories if they don't exist
-for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR]:
+for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR, BID_NOTES_OUTPUT_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
 def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None, empty_body: bool = False) -> Union[Dict[str, Any], str]:
@@ -179,6 +180,7 @@ def welcome_page():
     
     - Process meeting transcripts into actionable summaries
     - Review mortgage game plans for compliance issues
+    - Generate BID notes analysis from game plans
     
     Set your model and select a feature from the navigation menu to get started.""")
     
@@ -401,6 +403,134 @@ def game_plan_review_page():
                 else:
                     st.error(f"Failed to generate review using endpoint: {endpoint}")
 
+def bid_notes_page():
+    """Handle BID notes processing.
+    
+    Allows users to:
+    - Select PDF files from examples/sources/game_plans/
+    - Upload PDF files if none exist in source directory
+    - Extract and cache PDF text for performance
+    - Generate BID notes using selected model
+    - Save notes to examples/output/BID_notes/
+    - Display usage metadata from the API response
+    """
+    
+    st.header("BID Notes")
+    
+    # Use shared model and initialize cache
+    model_id = st.session_state.selected_model
+    if "pdf_cache" not in st.session_state:
+        st.session_state.pdf_cache = {}
+        
+    # Discover available BID notes endpoints
+    available_endpoints = {}
+    openapi_spec = fetch_openapi_spec()
+    
+    if openapi_spec and "paths" in openapi_spec:
+        for path, methods in openapi_spec["paths"].items():
+            if path.startswith("/BID_notes/"):
+                # Extract a friendly name from the path
+                endpoint_name = path.replace("/BID_notes/", "").replace("/", "").replace("_", " ").title()
+                if not endpoint_name:
+                    endpoint_name = "Standard Notes"
+                available_endpoints[endpoint_name] = path
+    
+    # If no endpoints found or OpenAPI unavailable, use defaults
+    if not available_endpoints:
+        available_endpoints = {
+            "Standard Notes": "/BID_notes/",
+        }
+    
+    # Add toggle for review type in a more compact layout
+    notes_type = st.radio(
+        "Notes method:",
+        options=list(available_endpoints.keys()),
+        horizontal=True,
+        help="Different methods provide different types of analysis for your BID notes."
+    )
+    
+    # File selection
+    game_plan_files = list(GAME_PLANS_DIR.glob("*.pdf"))
+    if not game_plan_files:
+        st.warning("No game plan files found in examples/sources/game_plans/")
+        # Allow file upload
+        uploaded_file = st.file_uploader("Upload PDF Game Plan", type="pdf")
+        if uploaded_file:
+            # Create a unique key for the uploaded file
+            cache_key = f"{uploaded_file.name}:{uploaded_file.size}"
+            if cache_key not in st.session_state.pdf_cache:
+                with st.spinner("Extracting text from uploaded PDF..."):
+                    pdf_text = extract_pdf_text(uploaded_file)
+                    st.session_state.pdf_cache[cache_key] = pdf_text
+            else:
+                pdf_text = st.session_state.pdf_cache[cache_key]
+            filename = uploaded_file.name
+    else:
+        selected_file = st.selectbox(
+            "Select Game Plan File",
+            options=game_plan_files,
+            format_func=lambda x: x.name
+        )
+        
+        if selected_file:
+            # Use file path as cache key
+            cache_key = str(selected_file)
+            if cache_key not in st.session_state.pdf_cache:
+                with st.spinner("Loading and extracting PDF..."):
+                    with open(selected_file, "rb") as f:
+                        pdf_text = extract_pdf_text(f)
+                    st.session_state.pdf_cache[cache_key] = pdf_text
+            else:
+                pdf_text = st.session_state.pdf_cache[cache_key]
+            filename = selected_file.name
+    
+    # Display extracted text
+    if 'pdf_text' in locals() and pdf_text:
+        with st.expander("View Extracted Text", expanded=False):
+            st.text(pdf_text)
+        
+        # Process game plan
+        if st.button("Generate BID Notes", type="primary"):
+            with st.spinner("Analyzing document..."):
+                data = {
+                    "input_text": pdf_text,
+                    "model": model_id
+                }
+                
+                # Choose endpoint based on notes type
+                endpoint = available_endpoints[notes_type]
+                
+                response = call_lucy_api(endpoint, method="POST", data=data)
+                
+                if "content" in response:
+                    # Display notes
+                    # Escape dollar signs for markdown
+                    escaped_content = re.sub(r'(?<!\\)\$', r'\$', response["content"])
+                    st.markdown(escaped_content)
+                    
+                    # Display usage metadata if available
+                    if "usage_metadata" in response:
+                        st.info(f"Usage: {response['usage_metadata']}")
+                    
+                    # Save notes
+                    safe_model_id = model_id.replace('/', '-').replace(':', '-')
+                    # Create suffix from endpoint name
+                    endpoint_suffix = "_" + notes_type.lower().replace(" ", "_") if notes_type != "Standard Notes" else ""
+                    output_filename = f"{Path(filename).stem}_{safe_model_id}{endpoint_suffix}.md"
+                    output_path = BID_NOTES_OUTPUT_DIR / output_filename
+                    
+                    with open(output_path, "w") as f:
+                        f.write(response["content"])
+                    
+                    # Create repository URL for the output file - encode spaces and special characters
+                    url_path = f"examples/output/BID_notes/{output_filename}"
+                    encoded_path = url_path.replace(" ", "%20").replace(":", "%3A").replace("/", "%2F")
+                    repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{encoded_path}"
+                    st.success(f"BID Notes saved to [examples/output/BID_notes/{output_filename}]({repo_url})")
+                    st.markdown(f"<small>Repository URL: {repo_url}</small>", unsafe_allow_html=True)
+                else:
+                    st.error(f"Failed to generate BID Notes using endpoint: {endpoint}")
+
 def template_management_page():
     """Handle template viewing and editing.
     
@@ -535,6 +665,7 @@ def main():
         st.Page(welcome_page, title="Welcome", icon="🏠"),
         st.Page(meeting_summary_page, title="Meeting Summary", icon="📝"),
         st.Page(game_plan_review_page, title="Game Plan Review", icon="📋"),
+        st.Page(bid_notes_page, title="BID Notes", icon="📊"),
         st.Page(template_management_page, title="Template Management", icon="⚙️")
     ]
     
