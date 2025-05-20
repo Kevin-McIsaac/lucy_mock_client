@@ -264,8 +264,10 @@ def meeting_summary_page():
                 with open(output_path, "w") as f:
                     f.write(response["content"])
                 
-                # Create repository URL for the output file
-                repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{output_path}"
+                # Create repository URL for the output file - encode spaces and special characters
+                url_path = f"examples/output/meeting_summary/{output_filename}"
+                encoded_path = url_path.replace(" ", "%20").replace(":", "%3A").replace("/", "%2F")
+                repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{encoded_path}"
                 st.success(f"Summary saved to [examples/output/meeting_summary/{output_filename}]({repo_url})")
                 st.markdown(f"<small>Repository URL: {repo_url}</small>", unsafe_allow_html=True)
             else:
@@ -390,8 +392,10 @@ def game_plan_review_page():
                     with open(output_path, "w") as f:
                         f.write(response["content"])
                     
-                    # Create repository URL for the output file
-                    repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{output_path}"
+                    # Create repository URL for the output file - encode spaces and special characters
+                    url_path = f"examples/output/game_plan_review/{output_filename}"
+                    encoded_path = url_path.replace(" ", "%20").replace(":", "%3A").replace("/", "%2F")
+                    repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{encoded_path}"
                     st.success(f"Review saved to [examples/output/game_plan_review/{output_filename}]({repo_url})")
                     st.markdown(f"<small>Repository URL: {repo_url}</small>", unsafe_allow_html=True)
                 else:
