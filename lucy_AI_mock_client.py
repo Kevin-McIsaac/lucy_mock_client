@@ -264,7 +264,10 @@ def meeting_summary_page():
                 with open(output_path, "w") as f:
                     f.write(response["content"])
                 
-                st.success(f"Summary saved to {output_path}")
+                # Create repository URL for the output file
+                repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{output_path}"
+                st.success(f"Summary saved to [examples/output/meeting_summary/{output_filename}]({repo_url})")
+                st.markdown(f"<small>Repository URL: {repo_url}</small>", unsafe_allow_html=True)
             else:
                 st.error("Failed to generate summary")
 
@@ -387,7 +390,10 @@ def game_plan_review_page():
                     with open(output_path, "w") as f:
                         f.write(response["content"])
                     
-                    st.success(f"Review saved to {output_path}")
+                    # Create repository URL for the output file
+                    repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{output_path}"
+                    st.success(f"Review saved to [examples/output/game_plan_review/{output_filename}]({repo_url})")
+                    st.markdown(f"<small>Repository URL: {repo_url}</small>", unsafe_allow_html=True)
                 else:
                     st.error(f"Failed to generate review using endpoint: {endpoint}")
 

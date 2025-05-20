@@ -104,6 +104,7 @@ Note: All endpoints require trailing slashes.
    - Game plans: PDF files in `examples/sources/game_plans/`
    - Outputs saved with model ID (format: `{original_filename}_{model_id}.md`)
    - Game plan reviews with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
+   - Success messages include GitHub repository URLs for quick access to saved files
 
 5. Template management:
    - Templates list: `/template/list/` returns a list of template filenames

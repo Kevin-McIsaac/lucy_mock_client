@@ -64,7 +64,7 @@ chmod +x cleanup_processes.sh
 3. Click "Generate Summary"
 4. View the generated summary with escaped dollar signs for proper markdown rendering
 5. Usage metadata displays in an info box after the content
-6. Results are saved to `examples/output/meeting_summary/`
+6. Results are saved to `examples/output/meeting_summary/` with clickable GitHub repository links
 
 ### Game Plan Review
 
@@ -78,7 +78,7 @@ chmod +x cleanup_processes.sh
 5. Click "Review Game Plan"
 6. View the review with escaped dollar signs for proper markdown rendering
 7. Usage metadata displays in an info box after the content
-8. Results are saved to `examples/output/game_plan_review/` with appropriate suffixes based on review type
+8. Results are saved to `examples/output/game_plan_review/` with appropriate suffixes based on review type and clickable GitHub repository links
 
 ### Template Management
 
