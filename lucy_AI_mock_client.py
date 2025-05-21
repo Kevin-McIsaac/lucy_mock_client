@@ -221,7 +221,17 @@ def meeting_summary_page():
     # File selection
     transcript_files = list(TRANSCRIPTS_DIR.glob("*.md"))
     if not transcript_files:
-        st.warning("No transcript files found in examples/sources/transcripts/")
+        st.warning("No transcript files found in {TRANSCRIPTS_DIR}.")
+        uploaded_file = st.file_uploader(
+            "Upload Transcript File", type=["md", "txt"], accept_multiple_files=False
+        )
+
+        if uploaded_file is not None:
+            file_string = StringIO(uploaded_file.getvalue().decode("utf-8")).read()
+
+            with open(f"{TRANSCRIPTS_DIR}/{uploaded_file.name}", "w") as file:
+                file.write(file_string)
+                st.rerun()
         return
     
     selected_file = st.selectbox(
