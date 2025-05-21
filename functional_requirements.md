@@ -11,6 +11,7 @@ To provide a user-friendly interface for processing mortgage-related documents u
 - Summarise meeting transcripts into actionable meeting summaries 
 - Review mortgage game plans for compliance issues
 - Generate BID notes from game plans for enhanced analysis
+- Extract information from driver's license images and other documents
 
 ### 2.2 Architecture
 - **Frontend**: Streamlit web application with multi-page navigation using st.navigation and st.Page
@@ -57,11 +58,23 @@ To provide a user-friendly interface for processing mortgage-related documents u
   - Standard notes: `{original_filename}_{model_id}.md`
   - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 
+#### 3.1.4 File Extractor
+- **Select Image Files**: Let the user select image files (jpg, jpeg, png) from examples/sources/file_extractor
+- **Image Processing**: Convert images to base64 for API processing with automatic caching
+- **Extraction Type Selection**: Allow users to choose from dynamically discovered file extractor endpoints
+  - Automatically discover all available `/file_extractor/*` endpoints from OpenAPI spec
+  - Provide user-friendly names for each endpoint
+  - Fall back to driver's license extraction if OpenAPI is unavailable
+- **Model Compatibility**: Only works with Claude Sonnet or GPT-4 models (auto-fallback implemented)
+- **Extract Information**: Process images using selected endpoint and display as formatted JSON
+- **Usage Metadata**: Display model usage information in st.info after the extraction results
+- **Image Display**: Show selected image with size information for user reference
+
 ### 3.2 User Interface Components
 
 #### 3.2.1 Navigation
 - Multi-page application using st.navigation and st.Page
-- Five main pages: Welcome, Meeting Summary, Game Plan Review, BID Notes, Template Management
+- Six main pages: Welcome, Meeting Summary, Game Plan Review, BID Notes, File Extractor, Template Management
 - Sidebar with global model selection that persists across pages
 
 #### 3.2.2 Common Controls
@@ -100,20 +113,25 @@ Support for the following AI models with specific identifiers:
 
 
 ### 3.5 File Management
-- **Input Files**: markdown (transcripts) and PDF (game plans)
-- **Output Directory Structure**: Organized storage in `examples/output/`
-  - `meeting_summary/`: Processed transcript summaries
-  - `game_plan_review/`: Game plan compliance reviews
-  - `BID_notes/`: Generated BID notes
+- **Input Files**: markdown (transcripts), PDF (game plans), and images (file extraction)
+- **Directory Structure**: Organized storage in `examples/`
+  - `sources/transcripts/`: Meeting transcript markdown files
+  - `sources/game_plans/`: Game plan PDF files
+  - `sources/file_extractor/`: Image files for extraction
+  - `output/meeting_summary/`: Processed transcript summaries
+  - `output/game_plan_review/`: Game plan compliance reviews
+  - `output/BID_notes/`: Generated BID notes
 - **File Naming**: 
   - Standard format: `{original_filename}_{model_id}.md` (no timestamps)
   - Alternative game plan endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 - **PDF Caching**: Extracted PDF text is cached in session state to avoid reprocessing
+- **Image Caching**: Images converted to base64 are cached in session state for performance
 
 ### 3.6 Session State Management
 - Preserve user preferences (model selection)
 - Template caching using simple dictionary structure
 - PDF text caching to avoid re-extraction
+- Image processing caching for base64 conversion
 
 ### 3.7 Error Handling
 - Display appropriate error messages
@@ -130,15 +148,16 @@ take precedence over the specifications below. The client now fetches
 and displays available endpoints from the OpenAPI spec.
 - **Endpoints**:
   - Use `API_ENDPOINT` from .env as the base of the API url
-  - `/interview/initial_broker_interview/transcript_to_summary/`: Generate meeting summaries
-  - `/game_plan/review/`: Analyze game plans for compliance (standard review)
+  - `/interview/initial_broker_interview/transcript_to_summary`: Generate meeting summaries
+  - `/game_plan/review`: Analyze game plans for compliance (standard review)
   - `/game_plan/review/*`: Additional game plan review endpoints (dynamically discovered)
-  - `/BID_notes/`: Generate BID notes from game plans (standard notes)
+  - `/BID_notes`: Generate BID notes from game plans (standard notes)
   - `/BID_notes/*`: Additional BID notes endpoints (dynamically discovered)
-  - `/file_extractor/drivers_licence/`: Extract information from driver's license images
-  - `/template/`: GET/PUT/POST template management with `file_name` query parameter
-  - `/template/list/`: GET list of available templates
-  - `/status/`: Server health check
+  - `/file_extractor/drivers_licence`: Extract information from driver's license images
+  - `/file_extractor/*`: Additional file extraction endpoints (dynamically discovered)
+  - `/template`: GET/PUT/POST template management with `file_name` query parameter
+  - `/template/list`: GET list of available templates
+  - `/status`: Server health check
 - **Authentication**: API key-based authentication using x-api-key header found in .env as `API_KEY`
 - **Data Format**: 
   - JSON request/response for main endpoints
@@ -150,10 +169,11 @@ and displays available endpoints from the OpenAPI spec.
 - **Request Parameters**: 
   - Use `model` for model selection (full model ID with provider prefix)
   - Use `input_text` for both meeting summary and game plan review input
+  - Use `image_base64` for file extractor endpoints
   - Use `file_name` as query parameter for template operations
 - **Endpoint Format**: 
-  - All endpoints require trailing slashes
-  - File extractor only works with Claude Sonnet and GPT-4 models
+  - All endpoints use paths without trailing slashes
+  - File extractor only works with Claude Sonnet and GPT-4 models (auto-fallback implemented)
   - Application includes automatic retry with new endpoints when older endpoints return 404
 
 

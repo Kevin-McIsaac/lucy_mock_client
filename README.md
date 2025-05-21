@@ -7,12 +7,14 @@ A Streamlit-based web application for processing mortgage documents using AI-pow
 - Process meeting transcripts into actionable summaries
 - Review mortgage game plans for compliance issues
 - Generate BID notes from game plans for enhanced analysis
+- Extract information from driver's license images
 - Support for multiple AI models (Claude, GPT, Gemini, Llama)
 - Template management with automatic template loading
 - Compact UI with optimized spacing and layout
 - Shared model selection across all pages
 - Server status checking with OpenAPI spec display
 - PDF text extraction and caching (supports encrypted PDFs)
+- Image processing and base64 conversion for file extraction
 - Enhanced error handling with detailed messages
 - Automatic process cleanup to prevent port conflicts
 
@@ -98,12 +100,26 @@ chmod +x cleanup_processes.sh
 ### Template Management
 
 1. Navigate to Template Management page
-2. Templates are dynamically loaded from `/template/list/` as a list of filenames
+2. Templates are dynamically loaded from `/template/list` as a list of filenames
 3. Select a template from the dropdown (displaying user-friendly names created from filename stems)
 4. Template content is automatically loaded when a template is selected
 5. Edit the template content in the text area
 6. Click "Save Template" to update (sends plain text body with file_name query parameter)
 7. Click "Pull Request" to create a pull request (sends POST with empty body and file_name parameter)
+
+### File Extractor
+
+1. Place image files (.jpg, .jpeg, .png) in `examples/sources/file_extractor/`
+   - Or upload an image directly if no files exist
+2. Select an extraction type from available endpoints
+   - Automatically discovers all available `/file_extractor/*` endpoints from the OpenAPI spec
+   - Falls back to driver's license extraction if OpenAPI is unavailable
+3. Select an image file from the dropdown
+4. Image is processed and converted to base64 automatically
+5. Click "Extract Information"
+   - Note: Only works with Claude Sonnet or GPT-4 models (auto-fallback implemented)
+6. View the extracted information as formatted JSON
+7. Usage metadata displays in an info box after the content
 
 ### Model Selection
 
@@ -117,7 +133,8 @@ chmod +x cleanup_processes.sh
 examples/
 ├── sources/
 │   ├── transcripts/      # Meeting transcript markdown files
-│   └── game_plans/       # Game plan PDF files
+│   ├── game_plans/       # Game plan PDF files
+│   └── file_extractor/   # Image files for extraction
 └── output/
     ├── meeting_summary/  # Generated meeting summaries
     ├── game_plan_review/ # Generated game plan reviews
@@ -174,22 +191,23 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines and troubleshooting.
 ### API Endpoints
 
 The application connects to the following Lucy AI server endpoints:
-- `/status/` - Health check
-- `/interview/initial_broker_interview/transcript_to_summary/` - Meeting summary generation
-- `/game_plan/review/` - Game plan analysis (standard review)
+- `/status` - Health check
+- `/interview/initial_broker_interview/transcript_to_summary` - Meeting summary generation
+- `/game_plan/review` - Game plan analysis (standard review)
 - `/game_plan/review/*` - Additional game plan review endpoints (automatically discovered)
-- `/BID_notes/` - BID notes generation (standard notes)
+- `/BID_notes` - BID notes generation (standard notes)
 - `/BID_notes/*` - Additional BID notes endpoints (automatically discovered)
-- `/file_extractor/drivers_licence/` - Extracts information from driver's license images
-- `/template/` - Template load/save/pull request with `file_name` query parameter
+- `/file_extractor/drivers_licence` - Extracts information from driver's license images
+- `/file_extractor/*` - Additional file extraction endpoints (automatically discovered)
+- `/template` - Template load/save/pull request with `file_name` query parameter
   - GET: Load template (returns plain text)
   - PUT: Save template (accepts plain text body)
   - POST: Create pull request (accepts empty body)
-- `/template/list/` - Get available templates (returns a list of filenames)
+- `/template/list` - Get available templates (returns a list of filenames)
 - `/openapi.json` - OpenAPI specification for endpoint discovery
 
 Notes: 
-- All endpoints use trailing slashes (except /openapi.json)
-- File extractor only works with Claude Sonnet or GPT-4 models
+- All endpoints use paths without trailing slashes
+- File extractor only works with Claude Sonnet or GPT-4 models (auto-fallback implemented)
 - Application includes backwards compatibility handling for old endpoint paths
 

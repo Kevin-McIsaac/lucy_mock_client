@@ -37,10 +37,14 @@ streamlit run lucy_AI_mock_client.py
 # Clean up processes if port conflicts occur
 ./cleanup_processes.sh
 
+# Install development tools (optional)
+pip install ruff mypy black
+
 # Code quality verification
-mypy lucy_AI_mock_client.py
-black lucy_AI_mock_client.py
 ruff check lucy_AI_mock_client.py
+ruff format lucy_AI_mock_client.py  # Optional: auto-format code
+mypy lucy_AI_mock_client.py  # Optional: type checking (requires mypy installation)
+black lucy_AI_mock_client.py  # Optional: code formatting (requires black installation)
 ```
 
 ## Environment Configuration
