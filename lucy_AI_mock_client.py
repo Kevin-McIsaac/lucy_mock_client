@@ -702,59 +702,16 @@ def file_extractor_page():
                     # Read the file as bytes
                     img_bytes = uploaded_file.getvalue()
                     
-                    # Resize image to stay under token limit (200,000 tokens max)
+                    # Load image for display
                     img = Image.open(BytesIO(img_bytes))
                     
-                    # Aim for max 50,000 bytes in base64 (keeps us well under 200k tokens)
-                    # Base64 is ~33% larger than binary + some buffer for JSON structure
-                    target_size = 50000  # bytes (50KB target)
+                    # Display image size info
                     img_byte_size = len(img_bytes)
+                    st.info(f"Image size: {img_byte_size/1024:.1f} KB, dimensions: {img.width}x{img.height}")
                     
-                    # Always resize for consistency
-                    st.info(f"Processing image (original: {img_byte_size/1024:.1f} KB)")
-                    
-                    # Save original image for display
-                    original_img = img.copy()
-                    
-                    # Start with 800px max dimension and 85% quality
-                    quality = 85
-                    max_size = 800
-                    
-                    # Iteratively reduce size/quality until under target size
-                    for _ in range(5):  # Try at most 5 iterations
-                        # Calculate new dimensions while maintaining aspect ratio
-                        ratio = min(max_size / img.width, max_size / img.height)
-                        new_size = (int(img.width * ratio), int(img.height * ratio))
-                        resized_img = img.resize(new_size, Image.LANCZOS)
-                        
-                        # Convert to bytes with current quality
-                        img_buffer = BytesIO()
-                        resized_img.save(img_buffer, format='JPEG', quality=quality)
-                        img_bytes = img_buffer.getvalue()
-                        
-                        current_size = len(img_bytes)
-                        if current_size <= target_size:
-                            break
-                            
-                        # Reduce size/quality for next iteration
-                        if max_size > 400:
-                            max_size -= 200
-                        else:
-                            quality -= 15
-                            if quality < 50:  # Don't go too low on quality
-                                quality = 50
-                                max_size -= 100
-                    
-                    st.info(f"Image processed to {len(img_bytes)/1024:.1f} KB with dimensions {new_size[0]}x{new_size[1]} and quality {quality}%")
-                    
-                    # Display original and compressed images side by side
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write("Original Image")
-                        st.image(original_img, width=200)
-                    with col2:
-                        st.write("Compressed Image")
-                        st.image(Image.open(BytesIO(img_bytes)), width=200)
+                    # Store the image in session state for persistent display
+                    st.session_state.current_image = img
+                    st.session_state.current_caption = uploaded_file.name
                     
                     # Convert to base64
                     img_base64 = base64.b64encode(img_bytes).decode('utf-8')
@@ -783,59 +740,16 @@ def file_extractor_page():
                     with open(selected_file, "rb") as f:
                         img_bytes = f.read()
                     
-                    # Resize image to stay under token limit (200,000 tokens max)
+                    # Load image for display
                     img = Image.open(BytesIO(img_bytes))
                     
-                    # Aim for max 50,000 bytes in base64 (keeps us well under 200k tokens)
-                    # Base64 is ~33% larger than binary + some buffer for JSON structure
-                    target_size = 50000  # bytes (50KB target)
+                    # Display image size info
                     img_byte_size = len(img_bytes)
+                    st.info(f"Image size: {img_byte_size/1024:.1f} KB, dimensions: {img.width}x{img.height}")
                     
-                    # Always resize for consistency
-                    st.info(f"Processing image (original: {img_byte_size/1024:.1f} KB)")
-                    
-                    # Save original image for display
-                    original_img = img.copy()
-                    
-                    # Start with 800px max dimension and 85% quality
-                    quality = 85
-                    max_size = 800
-                    
-                    # Iteratively reduce size/quality until under target size
-                    for _ in range(5):  # Try at most 5 iterations
-                        # Calculate new dimensions while maintaining aspect ratio
-                        ratio = min(max_size / img.width, max_size / img.height)
-                        new_size = (int(img.width * ratio), int(img.height * ratio))
-                        resized_img = img.resize(new_size, Image.LANCZOS)
-                        
-                        # Convert to bytes with current quality
-                        img_buffer = BytesIO()
-                        resized_img.save(img_buffer, format='JPEG', quality=quality)
-                        img_bytes = img_buffer.getvalue()
-                        
-                        current_size = len(img_bytes)
-                        if current_size <= target_size:
-                            break
-                            
-                        # Reduce size/quality for next iteration
-                        if max_size > 400:
-                            max_size -= 200
-                        else:
-                            quality -= 15
-                            if quality < 50:  # Don't go too low on quality
-                                quality = 50
-                                max_size -= 100
-                    
-                    st.info(f"Image processed to {len(img_bytes)/1024:.1f} KB with dimensions {new_size[0]}x{new_size[1]} and quality {quality}%")
-                    
-                    # Display original and compressed images side by side
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.write("Original Image")
-                        st.image(original_img, width=200)
-                    with col2:
-                        st.write("Compressed Image")
-                        st.image(Image.open(BytesIO(img_bytes)), width=200)
+                    # Store the image in session state for persistent display
+                    st.session_state.current_image = img
+                    st.session_state.current_caption = selected_file.name
                     
                     # Convert to base64
                     img_base64 = base64.b64encode(img_bytes).decode('utf-8')
@@ -848,6 +762,11 @@ def file_extractor_page():
     
     # Process image
     if 'img_base64' in locals() and img_base64:
+        # Display the current image if it's in session state
+        if 'current_image' in st.session_state and 'current_caption' in st.session_state:
+            # This ensures the image stays visible after button clicks
+            st.image(st.session_state.current_image, width=350, caption=st.session_state.current_caption)
+        
         # Process image
         if st.button("Extract Information", type="primary"):
             with st.spinner("Extracting information..."):
@@ -863,9 +782,6 @@ def file_extractor_page():
                 
                 # Choose endpoint based on extraction type
                 endpoint = available_endpoints[extraction_type]
-                
-                # Show image size info before sending
-                st.info(f"Sending image in base64 format. Base64 length: {len(img_base64)} characters")
                 
                 # Make API call with base64 image data
                 response = call_lucy_api(endpoint, method="POST", data=data)
