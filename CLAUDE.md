@@ -1,168 +1,100 @@
-# Claude Configuration Guide
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-This is a Streamlit application that interfaces with the Lucy AI server for processing mortgage documents.
+This is a Streamlit application that interfaces with the Lucy AI server for processing mortgage documents, including meeting transcript summaries, game plan reviews, BID notes generation, and file extraction.
 
 ## Key Components
 
 1. **lucy_AI_mock_client.py**: Main application file containing all functionality
-   - Improved error handling with consistent exception catching
-   - Enhanced documentation with comprehensive docstrings
-   - Simplified session state management
-   - OpenAPI integration for endpoint discovery
-2. **requirements.txt**: Python dependencies (streamlit, requests, python-dotenv, PyPDF2, pycryptodome)
-3. **.env**: Environment variables for API configuration (API_ENDPOINT, API_KEY)
-4. **setup.sh**: Virtual environment setup script
-5. **launch_lucy_ai.sh**: Script to launch both Lucy AI server and mock client
-6. **cleanup_processes.sh**: Script to handle port conflicts and kill stuck processes
+   - Single-file architecture with function-based organization
+   - OpenAPI integration for dynamic endpoint discovery
+   - Session state for user preferences and file caching
+   - Multi-page navigation with shared model selection
+   - File handling for transcripts, PDFs, and images
 
-## Environment Variables
+2. **Utility Scripts**:
+   - **setup.sh**: Virtual environment setup
+   - **launch_lucy_ai.sh**: Script to launch both server and client
+   - **cleanup_processes.sh**: Handles port conflicts and process cleanup
+   - **file_extractor_helper.py**: Helper for file extraction functionality
 
-The following environment variables must be set in `.env`:
+## Development Commands
+
+```bash
+# Setup environment
+./setup.sh
+source .venv/bin/activate
+
+# Run application
+streamlit run lucy_AI_mock_client.py
+
+# Launch both server and client
+./launch_lucy_ai.sh
+
+# Clean up processes if port conflicts occur
+./cleanup_processes.sh
+
+# Code quality verification
+mypy lucy_AI_mock_client.py
+black lucy_AI_mock_client.py
+ruff check lucy_AI_mock_client.py
+```
+
+## Environment Configuration
+
+Required environment variables in `.env`:
 ```
 API_ENDPOINT=http://localhost:8000
 API_KEY=your-api-key-here
 ```
 
-## Testing Commands
-
-When working on this project, run these commands to verify code quality:
-
-```bash
-# Type checking (if mypy is installed)
-mypy lucy_AI_mock_client.py
-
-# Code formatting (if black is installed)
-black lucy_AI_mock_client.py
-
-# Linting (if ruff is installed)
-ruff check lucy_AI_mock_client.py
-```
-
 ## API Integration
 
-The app integrates with Lucy AI server endpoints:
-- `/interview/transcript_to_summary/`: Process meeting transcripts
-- `/game_plan_review/`: Analyze game plans (standard review)
-- `/game_plan_review/*`: Additional game plan review endpoints (dynamically discovered from OpenAPI spec)
-- `/BID_notes/`: Generate BID notes from game plans
-- `/BID_notes/*`: Additional BID notes endpoints (dynamically discovered from OpenAPI spec)
-- `/template/`: Manage templates (GET/PUT/POST with `file_name` query parameter)
-- `/template/list/`: Get available templates
-- `/status/`: Check server health
+The application integrates with several Lucy AI server endpoints:
 
-Note: All endpoints require trailing slashes.
+| Endpoint | Purpose | Request Format | Response Format |
+|----------|---------|---------------|-----------------|
+| `/interview/transcript_to_summary/` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan_review/` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan_review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
+| `/BID_notes/` | Standard BID notes | `input_text`, `model` | `content`, `usage_metadata` |
+| `/BID_notes/*` | Specialized BID notes | `input_text`, `model` | `content`, `usage_metadata` |
+| `/file_extractor/drivers_licence/` | Extract info from license images | `image_base64`, `model` | `content` (JSON) |
+| `/template/` | Manage templates | `file_name` (query param) | Various |
+| `/template/list/` | List templates | None | Template filename list |
+| `/status/` | Server health check | None | Status response |
 
-### API Request Format
-- Authentication: `x-api-key` header
-- Model parameter: `model` (full model ID with provider prefix)
-- Meeting summary input: `input_text` key
-- Game plan input: `input_text` key
-- BID notes input: `input_text` key
-- Template operations: `file_name` as query parameter
+Notes:
+- All endpoints require trailing slashes
+- Authentication via `x-api-key` header
+- Model parameter uses full model ID with provider prefix
 
-### API Response Format
-- Content field: `content` contains generated text
-- Usage metadata: `usage_metadata` field with model usage information
-- Template list: Returns a list of template filenames
-- Template GET: Returns plain text
-- Template PUT: Accepts plain text body
-- Template POST: Accepts empty body for Pull Request creation
+## Implementation Guidelines
 
-## Development Notes
+### File Structure
+- Source files in `examples/sources/` (transcripts, game_plans, file_extractor)
+- Output files in `examples/output/` (meeting_summary, game_plan_review, BID_notes)
+- Output naming: `{original_filename}_{model_id}.md` or `{original_filename}_{model_id}_{endpoint_type}.md`
 
-- Uses Python 3.13.3 with type hints
-- Simple single-file architecture (no classes, just functions)
-- Streamlit st.navigation for multi-page setup using st.Page objects
-- Page headers use st.header instead of st.title for more compact layout
-- Session state for user preferences, template management, and PDF caching
-- Virtual environment: `.venv` directory
-- UI elements: st.info for usage metadata, escaped dollar signs for markdown
-- No visual dividers between content sections
-- Comprehensive docstrings with Args and Returns documentation
-- Consistent error handling with structured exception catching
-- Simplified session state management using dictionaries
-- Custom CSS applied to reduce page spacing and create a more compact UI
+### Adding New Functionality
+1. Follow existing patterns for page creation
+2. Maintain consistent error handling with `call_lucy_api()`
+3. Use Streamlit session state for caching and preferences
+4. Follow OpenAPI integration pattern for endpoint discovery
+5. Keep UI consistent with existing pages
+6. Add appropriate directory structure for new file types
 
-## Common Operations
+### Error Handling
+- Use `call_lucy_api()` for consistent error responses
+- Handle API errors with detailed status codes and messages
+- Add file-specific error handling when needed (e.g., PDF errors)
+- Verify API connectivity with clear error messages
 
-1. Add new AI model:
-   - Update `AI_MODELS` dictionary in lucy_AI_mock_client.py
-   - Use consistent model ID format (e.g., "claude-3.7-sonnet")
-
-2. Change API endpoint:
-   - Update `API_ENDPOINT` in .env (not `LUCY_API_URL`)
-   - Ensure trailing slashes on endpoints
-
-3. Debug API calls:
-   - Check `call_lucy_api()` function
-   - Enhanced error messages with HTTP status codes
-   - Uses `allow_redirects=True` for handling redirects
-   - Improved error handling with detailed responses
-   - Supports `empty_body` parameter for POST requests with empty payload
-
-4. File handling:
-   - Transcripts: Markdown files in `examples/sources/transcripts/`
-   - Game plans: PDF files in `examples/sources/game_plans/`
-   - Outputs saved with model ID (format: `{original_filename}_{model_id}.md`)
-   - Game plan reviews with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
-   - BID notes with alternative endpoints include endpoint suffix: `{original_filename}_{model_id}_{endpoint_type}.md`
-   - Success messages include GitHub repository URLs for quick access to saved files
-
-5. Template management:
-   - Templates list: `/template/list/` returns a list of template filenames
-   - Load template: GET request with `file_name` query parameter 
-   - Save template: PUT request with plain text body and `file_name` query parameter
-   - Pull Request: POST request with empty body and `file_name` query parameter
-   - UI uses two-column layout for Save Template (primary) and Pull Request (secondary) buttons
-   - Auto-loading templates when selected from dropdown
-
-## Error Handling
-
-Common issues and solutions:
-- 401 Unauthorized: Check API_KEY in .env
-- 422 Unprocessable Entity: Verify `model` parameter
-- 307 Redirect: Endpoints require trailing slashes
-- PDF errors: Handled separately with specific error messages
-- Connection errors: Display clear messages about API connectivity issues
-
-## Project Structure
-
-```
-lucy_mock_client/
-├── lucy_AI_mock_client.py   # Main application
-├── setup.sh                 # Setup script
-├── requirements.txt         # Dependencies
-├── .env                     # API configuration
-├── examples/
-│   ├── sources/
-│   │   ├── transcripts/     # Input markdown files
-│   │   └── game_plans/      # Input PDF files
-│   └── output/
-│       ├── meeting_summary/ # Generated summaries
-│       ├── game_plan_review/# Generated reviews
-│       └── BID_notes/       # Generated BID notes
-└── .venv/                   # Virtual environment
-```
-
-## OpenAPI Integration
-
-- Fetches and uses the openapi.json definitions from http://localhost:8000/openapi.json
-- Displays available endpoints in the welcome page status check
-- Uses OpenAPI spec for endpoint discovery and validation
-- Dynamically discovers game plan review endpoints (paths starting with `/game_plan_review/`)
-- Dynamically discovers BID notes endpoints (paths starting with `/BID_notes/`)
-- Provides user-friendly names for discovered endpoints
-
-## Utility Scripts
-
-1. **setup.sh** - Sets up the virtual environment and installs dependencies
-2. **launch_lucy_ai.sh** - Starts both Lucy AI server and mock client
-   - Automatically cleans up existing processes before starting
-   - Handles proper shutdown with signal trapping
-   - Stores PIDs for process management
-3. **cleanup_processes.sh** - Kills existing processes and frees port 8000
-   - Finds processes by port number
-   - Force kills stuck processes
-   - Verifies port is free before exiting
+### OpenAPI Integration
+- Fetch specifications from `/openapi.json`
+- Dynamically discover endpoints with common prefixes
+- Create user-friendly names from endpoint paths
+- Use for both UI display and endpoint validation
