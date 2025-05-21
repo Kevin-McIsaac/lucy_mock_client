@@ -57,18 +57,18 @@ The application integrates with several Lucy AI server endpoints:
 
 | Endpoint | Purpose | Request Format | Response Format |
 |----------|---------|---------------|-----------------|
-| `/interview/initial_broker_interview/transcript_to_summary/` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
-| `/game_plan/review/` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
+| `/interview/initial_broker_interview/transcript_to_summary` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/review` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
 | `/game_plan/review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
-| `/BID_notes/` | Standard BID notes | `input_text`, `model` | `content`, `usage_metadata` |
+| `/BID_notes` | Standard BID notes | `input_text`, `model` | `content`, `usage_metadata` |
 | `/BID_notes/*` | Specialized BID notes | `input_text`, `model` | `content`, `usage_metadata` |
-| `/file_extractor/drivers_licence/` | Extract info from license images | `image_base64`, `model` | `content` (JSON) |
-| `/template/` | Manage templates | `file_name` (query param) | Various |
-| `/template/list/` | List templates | None | Template filename list |
-| `/status/` | Server health check | None | Status response |
+| `/file_extractor/drivers_licence` | Extract info from license images | `image_base64`, `model` | `content` (JSON) |
+| `/template` | Manage templates | `file_name` (query param) | Various |
+| `/template/list` | List templates | None | Template filename list |
+| `/status` | Server health check | None | Status response |
 
 Notes:
-- All endpoints require trailing slashes
+- All endpoints now use paths without trailing slashes
 - Authentication via `x-api-key` header
 - Model parameter uses full model ID with provider prefix
 - File extractor only works with Claude Sonnet or GPT-4.1 models (auto-fallback implemented)

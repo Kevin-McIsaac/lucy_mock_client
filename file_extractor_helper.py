@@ -41,9 +41,9 @@ def file_extractor_page():
     
     if openapi_spec and "paths" in openapi_spec:
         for path, methods in openapi_spec["paths"].items():
-            if path.startswith("/file_extractor/"):
+            if path.startswith("/file_extractor"):
                 # Extract a friendly name from the path
-                endpoint_name = path.replace("/file_extractor/", "").replace("/", "").replace("_", " ").title()
+                endpoint_name = path.replace("/file_extractor", "").replace("/", "").replace("_", " ").title()
                 if not endpoint_name:
                     endpoint_name = "Standard Extractor"
                 available_endpoints[endpoint_name] = path
@@ -51,7 +51,7 @@ def file_extractor_page():
     # If no endpoints found or OpenAPI unavailable, use defaults
     if not available_endpoints:
         available_endpoints = {
-            "Drivers Licence": "/file_extractor/drivers_licence/",
+            "Drivers Licence": "/file_extractor/drivers_licence",
         }
     
     # Add toggle for extraction type in a more compact layout

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 import re
 import base64
 from PIL import Image
-from io import BytesIO
+from io import BytesIO, StringIO
 import json
 
 # Load environment variables
@@ -46,7 +46,7 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
     """Make API calls to Lucy AI server with consistent error handling.
     
     Args:
-        endpoint: API endpoint path (e.g., '/status/', '/template/')
+        endpoint: API endpoint path (e.g., '/status', '/template')
         method: HTTP method (GET, POST, PUT)
         data: JSON data for POST/PUT requests
         params: Query parameters for the request
@@ -100,18 +100,18 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
                 error_msg += f" - {error_detail['detail']}"
             else:
                 error_msg += f" - {error_detail}"
-        except:
+        except Exception:
             if e.response.text:
                 error_msg += f" - {e.response.text[:200]}"  # Limit response text length
         
         # Special handling for 404 errors on known endpoints
         if e.response.status_code == 404:
-            if endpoint == "/interview/transcript_to_summary/":
-                new_endpoint = "/interview/initial_broker_interview/transcript_to_summary/"
+            if endpoint == "/interview/transcript_to_summary":
+                new_endpoint = "/interview/initial_broker_interview/transcript_to_summary"
                 st.warning(f"The API endpoint has changed. Retrying with new endpoint: {new_endpoint}")
                 return call_lucy_api(new_endpoint, method, data, params, return_text, text_data, empty_body)
-            elif endpoint.startswith("/game_plan_review/"):
-                new_endpoint = "/game_plan/review/" + endpoint.replace("/game_plan_review/", "")
+            elif endpoint.startswith("/game_plan_review"):
+                new_endpoint = "/game_plan/review" + endpoint.replace("/game_plan_review", "")
                 st.warning(f"The API endpoint has changed. Retrying with new endpoint: {new_endpoint}")
                 return call_lucy_api(new_endpoint, method, data, params, return_text, text_data, empty_body)
         
@@ -127,13 +127,13 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
 def check_server_status() -> bool:
     """Check if Lucy AI server is available.
     
-    Makes a GET request to the /status/ endpoint to verify server connectivity.
+    Makes a GET request to the /status endpoint to verify server connectivity.
     
     Returns:
         True if server is accessible, False otherwise
     """
     try:
-        response = call_lucy_api("/status/")
+        response = call_lucy_api("/status")
         return bool(response)  # Just check if we got a response
     except Exception:
         return False
@@ -272,7 +272,7 @@ def meeting_summary_page():
                 "model": model_id
             }
             
-            response = call_lucy_api("/interview/initial_broker_interview/transcript_to_summary/", method="POST", data=data)
+            response = call_lucy_api("/interview/initial_broker_interview/transcript_to_summary", method="POST", data=data)
             
             if "content" in response:
                 # Display summary
@@ -326,9 +326,9 @@ def game_plan_review_page():
     
     if openapi_spec and "paths" in openapi_spec:
         for path, methods in openapi_spec["paths"].items():
-            if path.startswith("/game_plan/review/"):
+            if path.startswith("/game_plan/review"):
                 # Extract a friendly name from the path
-                endpoint_name = path.replace("/game_plan/review/", "").replace("/", "").replace("_", " ").title()
+                endpoint_name = path.replace("/game_plan/review", "").replace("/", "").replace("_", " ").title()
                 if not endpoint_name:
                     endpoint_name = "Standard Review"
                 available_endpoints[endpoint_name] = path
@@ -336,7 +336,7 @@ def game_plan_review_page():
     # If no endpoints found or OpenAPI unavailable, use defaults
     if not available_endpoints:
         available_endpoints = {
-            "Standard Review": "/game_plan/review/",
+            "Standard Review": "/game_plan/review",
         }
     
     # Add toggle for review type in a more compact layout
@@ -456,9 +456,9 @@ def bid_notes_page():
     
     if openapi_spec and "paths" in openapi_spec:
         for path, methods in openapi_spec["paths"].items():
-            if path.startswith("/BID_notes/"):
+            if path.startswith("/BID_notes"):
                 # Extract a friendly name from the path
-                endpoint_name = path.replace("/BID_notes/", "").replace("/", "").replace("_", " ").title()
+                endpoint_name = path.replace("/BID_notes", "").replace("/", "").replace("_", " ").title()
                 if not endpoint_name:
                     endpoint_name = "Standard Notes"
                 available_endpoints[endpoint_name] = path
@@ -466,7 +466,7 @@ def bid_notes_page():
     # If no endpoints found or OpenAPI unavailable, use defaults
     if not available_endpoints:
         available_endpoints = {
-            "Standard Notes": "/BID_notes/",
+            "Standard Notes": "/BID_notes",
         }
     
     # Add toggle for review type in a more compact layout
@@ -563,7 +563,7 @@ def template_management_page():
     """Handle template viewing and editing.
     
     Provides interface for managing Lucy AI templates:
-    - Fetches available templates from /template/list/ endpoint as a list of filenames
+    - Fetches available templates from /template/list endpoint as a list of filenames
     - Creates display names from filename stems
     - Loads template content for viewing/editing
     - Saves modified templates back to server
@@ -576,7 +576,7 @@ def template_management_page():
         st.session_state.templates = {}
     
     # Get list of templates from the API
-    template_list_response = call_lucy_api("/template/list/", method="GET")
+    template_list_response = call_lucy_api("/template/list", method="GET")
     
     if template_list_response and isinstance(template_list_response, list):  # Check if we got a list response
         # Create a mapping from display names to filenames
@@ -602,7 +602,7 @@ def template_management_page():
                 # Automatically load template when selection changes
                 if template_name not in st.session_state.templates:
                     params = {"file_name": template_name}
-                    response = call_lucy_api("/template/", params=params, return_text=True)
+                    response = call_lucy_api("/template", params=params, return_text=True)
                     if response:
                         st.session_state.templates[template_name] = response
                     else:
@@ -631,7 +631,7 @@ def template_management_page():
             with col1:
                 if st.button("Save Template", type="primary"):
                     params = {"file_name": template_name}
-                    response = call_lucy_api("/template/", method="PUT", params=params, text_data=template_content, return_text=True)
+                    response = call_lucy_api("/template", method="PUT", params=params, text_data=template_content, return_text=True)
                     
                     if response is not None:  # Check for None specifically since empty string might be valid
                         st.success("Template saved successfully!")
@@ -642,7 +642,7 @@ def template_management_page():
             with col2:
                 if st.button("Pull Request", type="secondary"):
                     params = {"file_name": template_name}
-                    response = call_lucy_api("/template/", method="POST", params=params, empty_body=True)
+                    response = call_lucy_api("/template", method="POST", params=params, empty_body=True)
                     
                     if response:
                         st.success("Pull request created successfully!")
@@ -689,9 +689,9 @@ def file_extractor_page():
     
     if openapi_spec and "paths" in openapi_spec:
         for path, methods in openapi_spec["paths"].items():
-            if path.startswith("/file_extractor/"):
+            if path.startswith("/file_extractor"):
                 # Extract a friendly name from the path
-                endpoint_name = path.replace("/file_extractor/", "").replace("/", "").replace("_", " ").title()
+                endpoint_name = path.replace("/file_extractor", "").replace("/", "").replace("_", " ").title()
                 if not endpoint_name:
                     endpoint_name = "Standard Extractor"
                 available_endpoints[endpoint_name] = path
@@ -699,7 +699,7 @@ def file_extractor_page():
     # If no endpoints found or OpenAPI unavailable, use defaults
     if not available_endpoints:
         available_endpoints = {
-            "Drivers Licence": "/file_extractor/drivers_licence/",
+            "Drivers Licence": "/file_extractor/drivers_licence",
         }
     
     # Add toggle for extraction type in a more compact layout
