@@ -104,6 +104,17 @@ def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, A
             if e.response.text:
                 error_msg += f" - {e.response.text[:200]}"  # Limit response text length
         
+        # Special handling for 404 errors on known endpoints
+        if e.response.status_code == 404:
+            if endpoint == "/interview/transcript_to_summary/":
+                new_endpoint = "/interview/initial_broker_interview/transcript_to_summary/"
+                st.warning(f"The API endpoint has changed. Retrying with new endpoint: {new_endpoint}")
+                return call_lucy_api(new_endpoint, method, data, params, return_text, text_data, empty_body)
+            elif endpoint.startswith("/game_plan_review/"):
+                new_endpoint = "/game_plan/review/" + endpoint.replace("/game_plan_review/", "")
+                st.warning(f"The API endpoint has changed. Retrying with new endpoint: {new_endpoint}")
+                return call_lucy_api(new_endpoint, method, data, params, return_text, text_data, empty_body)
+        
         st.error(error_msg)
         return {} if not return_text else ""
     except requests.exceptions.RequestException as e:
@@ -261,7 +272,7 @@ def meeting_summary_page():
                 "model": model_id
             }
             
-            response = call_lucy_api("/interview/transcript_to_summary/", method="POST", data=data)
+            response = call_lucy_api("/interview/initial_broker_interview/transcript_to_summary/", method="POST", data=data)
             
             if "content" in response:
                 # Display summary
@@ -315,9 +326,9 @@ def game_plan_review_page():
     
     if openapi_spec and "paths" in openapi_spec:
         for path, methods in openapi_spec["paths"].items():
-            if path.startswith("/game_plan_review/"):
+            if path.startswith("/game_plan/review/"):
                 # Extract a friendly name from the path
-                endpoint_name = path.replace("/game_plan_review/", "").replace("/", "").replace("_", " ").title()
+                endpoint_name = path.replace("/game_plan/review/", "").replace("/", "").replace("_", " ").title()
                 if not endpoint_name:
                     endpoint_name = "Standard Review"
                 available_endpoints[endpoint_name] = path
@@ -325,7 +336,7 @@ def game_plan_review_page():
     # If no endpoints found or OpenAPI unavailable, use defaults
     if not available_endpoints:
         available_endpoints = {
-            "Standard Review": "/game_plan_review/",
+            "Standard Review": "/game_plan/review/",
         }
     
     # Add toggle for review type in a more compact layout
@@ -386,6 +397,8 @@ def game_plan_review_page():
                 
                 # Choose endpoint based on review type
                 endpoint = available_endpoints[review_type]
+                
+                # Endpoint should already be using the correct format since discovery is based on paths
                 
                 response = call_lucy_api(endpoint, method="POST", data=data)
                 
@@ -660,6 +673,15 @@ def file_extractor_page():
     model_id = st.session_state.selected_model
     if "image_cache" not in st.session_state:
         st.session_state.image_cache = {}
+    
+    # Check if model is supported for file extraction
+    supported_models = ["anthropic:claude-3-7-sonnet-latest", "anthropic:claude-3-5-sonnet-latest", 
+                         "openai:gpt-4.1", "openai:gpt-4.1-mini"]
+    
+    if model_id not in supported_models:
+        st.warning(f"File extractor only works with Claude Sonnet or GPT-4 models. Current model ({AI_MODELS[model_id]}) may not work properly.")
+        supported_model_names = [AI_MODELS[m] for m in supported_models if m in AI_MODELS]
+        st.info(f"Supported models: {', '.join(supported_model_names)}")
         
     # Discover available file extractor endpoints
     available_endpoints = {}
@@ -769,6 +791,15 @@ def file_extractor_page():
         
         # Process image
         if st.button("Extract Information", type="primary"):
+            # Before processing, verify the model is supported
+            if model_id not in supported_models:
+                # Auto-select a fallback model
+                fallback_model = "anthropic:claude-3-7-sonnet-latest" if "anthropic:claude-3-7-sonnet-latest" in AI_MODELS else "openai:gpt-4.1"
+                st.warning(f"Switching to {AI_MODELS[fallback_model]} for file extraction as the selected model is not supported.")
+                extraction_model = fallback_model
+            else:
+                extraction_model = model_id
+                
             with st.spinner("Extracting information..."):
                 # Looking at the OpenAPI schema:
                 # 1. The file_extractor endpoints expect a FileExtractorRequest object with:
@@ -777,7 +808,7 @@ def file_extractor_page():
                 # This matches exactly what we're sending
                 data = {
                     "image_base64": img_base64,
-                    "model": model_id
+                    "model": extraction_model
                 }
                 
                 # Choose endpoint based on extraction type

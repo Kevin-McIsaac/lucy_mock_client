@@ -72,7 +72,7 @@ chmod +x cleanup_processes.sh
 1. Place game plan files (.pdf) in `examples/sources/game_plans/`
    - Or upload a PDF directly if no files exist
 2. Select a review type from available endpoints
-   - Automatically discovers all available `/game_plan_review/*` endpoints from the OpenAPI spec
+   - Automatically discovers all available `/game_plan/review/*` endpoints from the OpenAPI spec
    - Falls back to standard endpoints if OpenAPI is unavailable
 3. Select a file from the dropdown
 4. PDF text is extracted and cached automatically
@@ -175,11 +175,12 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines and troubleshooting.
 
 The application connects to the following Lucy AI server endpoints:
 - `/status/` - Health check
-- `/interview/transcript_to_summary/` - Meeting summary generation
-- `/game_plan_review/` - Game plan analysis (standard review)
-- `/game_plan_review/*` - Additional game plan review endpoints (automatically discovered)
+- `/interview/initial_broker_interview/transcript_to_summary/` - Meeting summary generation
+- `/game_plan/review/` - Game plan analysis (standard review)
+- `/game_plan/review/*` - Additional game plan review endpoints (automatically discovered)
 - `/BID_notes/` - BID notes generation (standard notes)
 - `/BID_notes/*` - Additional BID notes endpoints (automatically discovered)
+- `/file_extractor/drivers_licence/` - Extracts information from driver's license images
 - `/template/` - Template load/save/pull request with `file_name` query parameter
   - GET: Load template (returns plain text)
   - PUT: Save template (accepts plain text body)
@@ -187,5 +188,8 @@ The application connects to the following Lucy AI server endpoints:
 - `/template/list/` - Get available templates (returns a list of filenames)
 - `/openapi.json` - OpenAPI specification for endpoint discovery
 
-Note: All endpoints use trailing slashes (except /openapi.json).
+Notes: 
+- All endpoints use trailing slashes (except /openapi.json)
+- File extractor only works with Claude Sonnet or GPT-4 models
+- Application includes backwards compatibility handling for old endpoint paths
 

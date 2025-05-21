@@ -57,9 +57,9 @@ The application integrates with several Lucy AI server endpoints:
 
 | Endpoint | Purpose | Request Format | Response Format |
 |----------|---------|---------------|-----------------|
-| `/interview/transcript_to_summary/` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
-| `/game_plan_review/` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
-| `/game_plan_review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
+| `/interview/initial_broker_interview/transcript_to_summary/` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/review/` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
 | `/BID_notes/` | Standard BID notes | `input_text`, `model` | `content`, `usage_metadata` |
 | `/BID_notes/*` | Specialized BID notes | `input_text`, `model` | `content`, `usage_metadata` |
 | `/file_extractor/drivers_licence/` | Extract info from license images | `image_base64`, `model` | `content` (JSON) |
@@ -71,6 +71,8 @@ Notes:
 - All endpoints require trailing slashes
 - Authentication via `x-api-key` header
 - Model parameter uses full model ID with provider prefix
+- File extractor only works with Claude Sonnet or GPT-4.1 models (auto-fallback implemented)
+- Error handling includes automatic retrying with new endpoint paths if old paths return 404
 
 ## Implementation Guidelines
 

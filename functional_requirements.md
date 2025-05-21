@@ -33,7 +33,7 @@ To provide a user-friendly interface for processing mortgage-related documents u
 - **Upload PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
 - **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
 - **Review Type Selection**: Allow users to choose from dynamically discovered review endpoints
-  - Automatically discover all available `/game_plan_review/*` endpoints from OpenAPI spec
+  - Automatically discover all available `/game_plan/review/*` endpoints from OpenAPI spec
   - Provide user-friendly names for each endpoint
   - Fall back to standard endpoints if OpenAPI is unavailable
 - **Review**: Analyze game plans using selected endpoint. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
@@ -130,11 +130,12 @@ take precedence over the specifications below. The client now fetches
 and displays available endpoints from the OpenAPI spec.
 - **Endpoints**:
   - Use `API_ENDPOINT` from .env as the base of the API url
-  - `/interview/transcript_to_summary/`: Generate meeting summaries
-  - `/game_plan_review/`: Analyze game plans for compliance (standard review)
-  - `/game_plan_review/*`: Additional game plan review endpoints (dynamically discovered)
+  - `/interview/initial_broker_interview/transcript_to_summary/`: Generate meeting summaries
+  - `/game_plan/review/`: Analyze game plans for compliance (standard review)
+  - `/game_plan/review/*`: Additional game plan review endpoints (dynamically discovered)
   - `/BID_notes/`: Generate BID notes from game plans (standard notes)
   - `/BID_notes/*`: Additional BID notes endpoints (dynamically discovered)
+  - `/file_extractor/drivers_licence/`: Extract information from driver's license images
   - `/template/`: GET/PUT/POST template management with `file_name` query parameter
   - `/template/list/`: GET list of available templates
   - `/status/`: Server health check
@@ -150,7 +151,10 @@ and displays available endpoints from the OpenAPI spec.
   - Use `model` for model selection (full model ID with provider prefix)
   - Use `input_text` for both meeting summary and game plan review input
   - Use `file_name` as query parameter for template operations
-- **Endpoint Format**: All endpoints require trailing slashes
+- **Endpoint Format**: 
+  - All endpoints require trailing slashes
+  - File extractor only works with Claude Sonnet and GPT-4 models
+  - Application includes automatic retry with new endpoints when older endpoints return 404
 
 
 ### 3.9 Performance Requirements
