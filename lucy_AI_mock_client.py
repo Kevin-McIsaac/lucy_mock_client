@@ -6,6 +6,10 @@ from pathlib import Path
 import PyPDF2
 from dotenv import load_dotenv
 import re
+import base64
+from PIL import Image
+from io import BytesIO
+import json
 
 # Load environment variables
 load_dotenv()
@@ -29,12 +33,13 @@ AI_MODELS = {
 # Directory paths
 TRANSCRIPTS_DIR = Path("examples/sources/transcripts")
 GAME_PLANS_DIR = Path("examples/sources/game_plans")
+FILE_EXTRACTOR_DIR = Path("examples/sources/file_extractor")
 SUMMARY_OUTPUT_DIR = Path("examples/output/meeting_summary")
 REVIEW_OUTPUT_DIR = Path("examples/output/game_plan_review")
 BID_NOTES_OUTPUT_DIR = Path("examples/output/BID_notes")
 
 # Create directories if they don't exist
-for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR, BID_NOTES_OUTPUT_DIR]:
+for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, FILE_EXTRACTOR_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR, BID_NOTES_OUTPUT_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
 def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None, empty_body: bool = False) -> Union[Dict[str, Any], str]:
@@ -639,6 +644,174 @@ def template_management_page():
     else:
         pass  # No template selected
 
+def file_extractor_page():
+    """Handle file extraction processing.
+    
+    Allows users to:
+    - Select image files from examples/sources/file_extractor/
+    - Upload image files if none exist in source directory
+    - Convert images to base64 for API processing
+    - Extract information using selected model
+    - Display extracted information as a JSON code block
+    """
+    st.header("File Extractor")
+    
+    # Use shared model and initialize cache
+    model_id = st.session_state.selected_model
+    if "image_cache" not in st.session_state:
+        st.session_state.image_cache = {}
+        
+    # Discover available file extractor endpoints
+    available_endpoints = {}
+    openapi_spec = fetch_openapi_spec()
+    
+    if openapi_spec and "paths" in openapi_spec:
+        for path, methods in openapi_spec["paths"].items():
+            if path.startswith("/file_extractor/"):
+                # Extract a friendly name from the path
+                endpoint_name = path.replace("/file_extractor/", "").replace("/", "").replace("_", " ").title()
+                if not endpoint_name:
+                    endpoint_name = "Standard Extractor"
+                available_endpoints[endpoint_name] = path
+    
+    # If no endpoints found or OpenAPI unavailable, use defaults
+    if not available_endpoints:
+        available_endpoints = {
+            "Drivers Licence": "/file_extractor/drivers_licence/",
+        }
+    
+    # Add toggle for extraction type in a more compact layout
+    extraction_type = st.radio(
+        "Extraction method:",
+        options=list(available_endpoints.keys()),
+        horizontal=True,
+        help="Different extraction methods for different document types."
+    )
+    
+    # File selection
+    image_files = list(FILE_EXTRACTOR_DIR.glob("*.jpg")) + list(FILE_EXTRACTOR_DIR.glob("*.jpeg")) + list(FILE_EXTRACTOR_DIR.glob("*.png"))
+    if not image_files:
+        st.warning("No image files found in examples/sources/file_extractor/")
+        # Allow file upload
+        uploaded_file = st.file_uploader("Upload Image File", type=["jpg", "jpeg", "png"])
+        if uploaded_file:
+            # Create a unique key for the uploaded file
+            cache_key = f"{uploaded_file.name}:{uploaded_file.size}"
+            if cache_key not in st.session_state.image_cache:
+                with st.spinner("Processing uploaded image..."):
+                    # Read the file as bytes
+                    img_bytes = uploaded_file.getvalue()
+                    
+                    # Load image for display
+                    img = Image.open(BytesIO(img_bytes))
+                    
+                    # Display image size info
+                    img_byte_size = len(img_bytes)
+                    st.info(f"Image size: {img_byte_size/1024:.1f} KB, dimensions: {img.width}x{img.height}")
+                    
+                    # Store the image in session state for persistent display
+                    st.session_state.current_image = img
+                    st.session_state.current_caption = uploaded_file.name
+                    
+                    # Convert to base64
+                    img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+                    st.session_state.image_cache[cache_key] = img_base64
+                    
+                    # Save the processed file to the source directory
+                    with open(f"{FILE_EXTRACTOR_DIR}/{uploaded_file.name}", "wb") as f:
+                        f.write(img_bytes)
+            else:
+                img_base64 = st.session_state.image_cache[cache_key]
+            filename = uploaded_file.name
+            
+            # Image will be displayed in the comparison section
+    else:
+        selected_file = st.selectbox(
+            "Select Image File",
+            options=image_files,
+            format_func=lambda x: x.name
+        )
+        
+        if selected_file:
+            # Use file path as cache key
+            cache_key = str(selected_file)
+            if cache_key not in st.session_state.image_cache:
+                with st.spinner("Loading and processing image..."):
+                    with open(selected_file, "rb") as f:
+                        img_bytes = f.read()
+                    
+                    # Load image for display
+                    img = Image.open(BytesIO(img_bytes))
+                    
+                    # Display image size info
+                    img_byte_size = len(img_bytes)
+                    st.info(f"Image size: {img_byte_size/1024:.1f} KB, dimensions: {img.width}x{img.height}")
+                    
+                    # Store the image in session state for persistent display
+                    st.session_state.current_image = img
+                    st.session_state.current_caption = selected_file.name
+                    
+                    # Convert to base64
+                    img_base64 = base64.b64encode(img_bytes).decode('utf-8')
+                    st.session_state.image_cache[cache_key] = img_base64
+            else:
+                img_base64 = st.session_state.image_cache[cache_key]
+            filename = selected_file.name
+            
+            # Image will be displayed in the comparison section
+    
+    # Process image
+    if 'img_base64' in locals() and img_base64:
+        # Display the current image if it's in session state
+        if 'current_image' in st.session_state and 'current_caption' in st.session_state:
+            # This ensures the image stays visible after button clicks
+            st.image(st.session_state.current_image, width=350, caption=st.session_state.current_caption)
+        
+        # Process image
+        if st.button("Extract Information", type="primary"):
+            with st.spinner("Extracting information..."):
+                # Looking at the OpenAPI schema:
+                # 1. The file_extractor endpoints expect a FileExtractorRequest object with:
+                #    - image_base64: string (required)
+                #    - model: string (with default)
+                # This matches exactly what we're sending
+                data = {
+                    "image_base64": img_base64,
+                    "model": model_id
+                }
+                
+                # Choose endpoint based on extraction type
+                endpoint = available_endpoints[extraction_type]
+                
+                # Make API call with base64 image data
+                response = call_lucy_api(endpoint, method="POST", data=data)
+                
+                if "content" in response:
+                    # Display the raw JSON response
+                    st.subheader("Extracted Information")
+                    
+                    # Try to parse the content as JSON if it's string JSON
+                    content = response["content"]
+                    try:
+                        if isinstance(content, str):
+                            # Try to parse as JSON
+                            parsed_json = json.loads(content)
+                            # Format with indentation for display
+                            formatted_json = json.dumps(parsed_json, indent=2)
+                            st.code(formatted_json, language="json")
+                        else:
+                            # Already a dict or other object, just display as JSON
+                            st.code(json.dumps(content, indent=2), language="json")
+                    except json.JSONDecodeError:
+                        # If it's not valid JSON, display as plain text
+                        st.code(content)
+                    
+                    # Display usage metadata if available
+                    if "usage_metadata" in response:
+                        st.info(f"Usage: {response['usage_metadata']}")
+                else:
+                    st.error(f"Failed to extract information using endpoint: {endpoint}")
+
 def main():
     """Main application entry point.
     
@@ -676,6 +849,7 @@ def main():
         st.Page(meeting_summary_page, title="Meeting Summary", icon="📝"),
         st.Page(game_plan_review_page, title="Game Plan Review", icon="📋"),
         st.Page(bid_notes_page, title="BID Notes", icon="📊"),
+        st.Page(file_extractor_page, title="File Extractor", icon="🖼️"),
         st.Page(template_management_page, title="Template Management", icon="⚙️")
     ]
     
