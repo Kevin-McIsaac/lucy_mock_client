@@ -36,10 +36,10 @@ GAME_PLANS_DIR = Path("examples/sources/game_plans")
 FILE_EXTRACTOR_DIR = Path("examples/sources/file_extractor")
 SUMMARY_OUTPUT_DIR = Path("examples/output/meeting_summary")
 REVIEW_OUTPUT_DIR = Path("examples/output/game_plan_review")
-BID_NOTES_OUTPUT_DIR = Path("examples/output/BID_notes")
+GENERATE_OUTPUT_DIR = Path("examples/output/game_plan_generate")
 
 # Create directories if they don't exist
-for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, FILE_EXTRACTOR_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR, BID_NOTES_OUTPUT_DIR]:
+for dir_path in [TRANSCRIPTS_DIR, GAME_PLANS_DIR, FILE_EXTRACTOR_DIR, SUMMARY_OUTPUT_DIR, REVIEW_OUTPUT_DIR, GENERATE_OUTPUT_DIR]:
     dir_path.mkdir(parents=True, exist_ok=True)
 
 def call_lucy_api(endpoint: str, method: str = "GET", data: Optional[Dict[str, Any]] = None, params: Optional[Dict[str, Any]] = None, return_text: bool = False, text_data: str = None, empty_body: bool = False) -> Union[Dict[str, Any], str]:
@@ -431,50 +431,50 @@ def game_plan_review_page():
                 else:
                     st.error(f"Failed to generate review using endpoint: {endpoint}")
 
-def bid_notes_page():
-    """Handle BID notes processing.
+def game_plan_generate_page():
+    """Handle game plan generation processing.
     
     Allows users to:
     - Select PDF files from examples/sources/game_plans/
     - Upload PDF files if none exist in source directory
     - Extract and cache PDF text for performance
-    - Generate BID notes using selected model
-    - Save notes to examples/output/BID_notes/
+    - Generate game plans using selected model
+    - Save generated plans to examples/output/game_plan_generate/
     - Display usage metadata from the API response
     """
-    
-    st.header("BID Notes")
+  
+    st.header("Game Plan Generate")
     
     # Use shared model and initialize cache
     model_id = st.session_state.selected_model
     if "pdf_cache" not in st.session_state:
         st.session_state.pdf_cache = {}
         
-    # Discover available BID notes endpoints
+    # Discover available game plan generate endpoints
     available_endpoints = {}
     openapi_spec = fetch_openapi_spec()
     
     if openapi_spec and "paths" in openapi_spec:
         for path, methods in openapi_spec["paths"].items():
-            if path.startswith("/BID_notes"):
+            if path.startswith("/game_plan/generate"):
                 # Extract a friendly name from the path
-                endpoint_name = path.replace("/BID_notes", "").replace("/", "").replace("_", " ").title()
+                endpoint_name = path.replace("/game_plan/generate", "").replace("/", "").replace("_", " ").title()
                 if not endpoint_name:
-                    endpoint_name = "Standard Notes"
+                    endpoint_name = "Standard Generate"
                 available_endpoints[endpoint_name] = path
     
     # If no endpoints found or OpenAPI unavailable, use defaults
     if not available_endpoints:
         available_endpoints = {
-            "Standard Notes": "/BID_notes",
+            "Standard Generate": "/game_plan/generate",
         }
     
-    # Add toggle for review type in a more compact layout
-    notes_type = st.radio(
-        "Notes method:",
+    # Add toggle for generation type in a more compact layout
+    generate_type = st.radio(
+        "Generation method:",
         options=list(available_endpoints.keys()),
         horizontal=True,
-        help="Different methods provide different types of analysis for your BID notes."
+        help="Different generation methods provide different types of game plan creation."
     )
     
     # File selection
@@ -518,20 +518,20 @@ def bid_notes_page():
             st.text(pdf_text)
         
         # Process game plan
-        if st.button("Generate BID Notes", type="primary"):
-            with st.spinner("Analyzing document..."):
+        if st.button("Generate Game Plan", type="primary"):
+            with st.spinner("Generating game plan..."):
                 data = {
                     "input_text": pdf_text,
                     "model": model_id
                 }
                 
-                # Choose endpoint based on notes type
-                endpoint = available_endpoints[notes_type]
+                # Choose endpoint based on generation type
+                endpoint = available_endpoints[generate_type]
                 
                 response = call_lucy_api(endpoint, method="POST", data=data)
                 
                 if "content" in response:
-                    # Display notes
+                    # Display generated plan
                     # Escape dollar signs for markdown
                     escaped_content = re.sub(r'(?<!\\)\$', r'\$', response["content"])
                     st.markdown(escaped_content)
@@ -540,24 +540,24 @@ def bid_notes_page():
                     if "usage_metadata" in response:
                         st.info(f"Usage: {response['usage_metadata']}")
                     
-                    # Save notes
+                    # Save generated plan
                     safe_model_id = model_id.replace('/', '-').replace(':', '-')
                     # Create suffix from endpoint name
-                    endpoint_suffix = "_" + notes_type.lower().replace(" ", "_") if notes_type != "Standard Notes" else ""
+                    endpoint_suffix = "_" + generate_type.lower().replace(" ", "_") if generate_type != "Standard Generate" else ""
                     output_filename = f"{Path(filename).stem}_{safe_model_id}{endpoint_suffix}.md"
-                    output_path = BID_NOTES_OUTPUT_DIR / output_filename
+                    output_path = GENERATE_OUTPUT_DIR / output_filename
                     
                     with open(output_path, "w") as f:
                         f.write(response["content"])
                     
                     # Create repository URL for the output file - encode spaces and special characters
-                    url_path = f"examples/output/BID_notes/{output_filename}"
+                    url_path = f"examples/output/game_plan_generate/{output_filename}"
                     encoded_path = url_path.replace(" ", "%20").replace(":", "%3A").replace("/", "%2F")
                     repo_url = f"https://github.com/Kevin-McIsaac/lucy_mock_client/blob/main/{encoded_path}"
-                    st.success(f"BID Notes saved to [examples/output/BID_notes/{output_filename}]({repo_url})")
+                    st.success(f"Game Plan saved to [examples/output/game_plan_generate/{output_filename}]({repo_url})")
                     st.markdown(f"<small>Repository URL: {repo_url}</small>", unsafe_allow_html=True)
                 else:
-                    st.error(f"Failed to generate BID Notes using endpoint: {endpoint}")
+                    st.error(f"Failed to generate game plan using endpoint: {endpoint}")
 
 def template_management_page():
     """Handle template viewing and editing.
@@ -923,7 +923,7 @@ def main():
         st.Page(welcome_page, title="Welcome", icon="🏠"),
         st.Page(meeting_summary_page, title="Meeting Summary", icon="📝"),
         st.Page(game_plan_review_page, title="Game Plan Review", icon="📋"),
-        st.Page(bid_notes_page, title="BID Notes", icon="📊"),
+        st.Page(game_plan_generate_page, title="Game Plan Generate", icon="🔄"),
         st.Page(file_extractor_page, title="File Extractor", icon="🖼️"),
         st.Page(template_management_page, title="Template Management", icon="⚙️")
     ]
