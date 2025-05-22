@@ -62,10 +62,10 @@ The application integrates with several Lucy AI server endpoints:
 | Endpoint | Purpose | Request Format | Response Format |
 |----------|---------|---------------|-----------------|
 | `/interview/initial_broker_interview/transcript_to_summary` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
-| `/game_plan/review` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
-| `/game_plan/review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
 | `/game_plan/generate` | Standard game plan generation | `input_text`, `model` | `content`, `usage_metadata` |
 | `/game_plan/generate/*` | Specialized game plan generation | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/review` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
 | `/file_extractor/drivers_licence` | Extract info from license images | `image_base64`, `model`, `image_type` | `content` (JSON) |
 | `/template` | Manage templates | `file_name` (query param) | Various |
 | `/template/list` | List templates | None | Template filename list |

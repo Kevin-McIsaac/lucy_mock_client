@@ -2,15 +2,15 @@
 
 ## 1. Executive Summary
 
-The Lucy AI Mock Client is a Streamlit-based web application that serves as a frontend interface for the Lucy AI server. It provides mortgage professionals with tools to process meeting transcripts, review mortgage game plans, and generate BID notes. The application supports multiple AI models for processing.
+The Lucy AI Mock Client is a Streamlit-based web application that serves as a frontend interface for the Lucy AI server. It provides mortgage professionals with tools to process meeting transcripts, generate mortgage game plans, and review existing game plans. The application supports multiple AI models for processing.
 
 ## 2. System Overview
 
 ### 2.1 Purpose
 To provide a user-friendly interface for processing mortgage-related documents using AI-powered analysis, enabling professionals to:
 - Summarise meeting transcripts into actionable meeting summaries 
+- Generate mortgage game plans from existing documents
 - Review mortgage game plans for compliance issues
-- Generate BID notes from game plans for enhanced analysis
 - Extract information from driver's license images and other documents
 
 ### 2.2 Architecture
@@ -44,21 +44,35 @@ To provide a user-friendly interface for processing mortgage-related documents u
   - Standard review: `{original_filename}_{model_id}.md`
   - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 
-#### 3.1.3 BID Notes Generation
+#### 3.1.3 Game Plan Generation
 - **Select PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
 - **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
-- **Notes Type Selection**: Allow users to choose from dynamically discovered BID notes endpoints
-  - Automatically discover all available `/BID_notes/*` endpoints from OpenAPI spec
+- **Generation Type Selection**: Allow users to choose from dynamically discovered game plan generation endpoints
+  - Automatically discover all available `/game_plan/generate/*` endpoints from OpenAPI spec
   - Provide user-friendly names for each endpoint
   - Fall back to standard endpoints if OpenAPI is unavailable
-- **Generate Notes**: Analyze game plans using selected endpoint. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
-- **Usage Metadata**: Display model usage information in st.info after the notes content
-- **Save Notes**: Save notes to the folder examples/output/BID_notes using the filename from the game plan
+- **Generate Game Plans**: Analyze documents using selected endpoint. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
+- **Usage Metadata**: Display model usage information in st.info after the generated content
+- **Save Generated Plans**: Save generated plans to the folder examples/output/game_plan_generate using the filename from the source document
 - **File Naming**: 
-  - Standard notes: `{original_filename}_{model_id}.md`
+  - Standard generation: `{original_filename}_{model_id}.md`
   - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 
-#### 3.1.4 File Extractor
+#### 3.1.4 Game Plan Review
+- **Select PDF Game Plans**: Let the user select PDF files containing mortgage game plans from examples/sources/game_plans
+- **Extract Text**: Convert PDF content to text for processing and show in closed expander with caching
+- **Review Type Selection**: Allow users to choose from dynamically discovered review endpoints
+  - Automatically discover all available `/game_plan/review/*` endpoints from OpenAPI spec
+  - Provide user-friendly names for each endpoint
+  - Fall back to standard endpoints if OpenAPI is unavailable
+- **Review**: Analyze game plans using selected endpoint. Display the content as formatted markdown with escaped dollar signs to avoid formatting issues.
+- **Usage Metadata**: Display model usage information in st.info after the review content
+- **Save Reviews**: Save reviews to the folder examples/output/game_plan_review using the filename from the game plan
+- **File Naming**: 
+  - Standard review: `{original_filename}_{model_id}.md`
+  - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
+
+#### 3.1.5 File Extractor
 - **Select Image Files**: Let the user select image files (jpg, jpeg, png, gif, webp) from examples/sources/file_extractor
 - **Image Processing**: Convert images to base64 for API processing with automatic caching
 - **Extraction Type Selection**: Allow users to choose from dynamically discovered file extractor endpoints
@@ -74,7 +88,7 @@ To provide a user-friendly interface for processing mortgage-related documents u
 
 #### 3.2.1 Navigation
 - Multi-page application using st.navigation and st.Page
-- Six main pages: Welcome, Meeting Summary, Game Plan Review, BID Notes, File Extractor, Template Management
+- Six main pages: Welcome, Meeting Summary, Game Plan Generate, Game Plan Review, File Extractor, Template Management
 - Sidebar with global model selection that persists across pages
 
 #### 3.2.2 Common Controls
@@ -119,8 +133,8 @@ Support for the following AI models with specific identifiers:
   - `sources/game_plans/`: Game plan PDF files
   - `sources/file_extractor/`: Image files for extraction
   - `output/meeting_summary/`: Processed transcript summaries
+  - `output/game_plan_generate/`: Generated game plans
   - `output/game_plan_review/`: Game plan compliance reviews
-  - `output/BID_notes/`: Generated BID notes
 - **File Naming**: 
   - Standard format: `{original_filename}_{model_id}.md` (no timestamps)
   - Alternative game plan endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
@@ -149,10 +163,10 @@ and displays available endpoints from the OpenAPI spec.
 - **Endpoints**:
   - Use `API_ENDPOINT` from .env as the base of the API url
   - `/interview/initial_broker_interview/transcript_to_summary`: Generate meeting summaries
+  - `/game_plan/generate`: Generate game plans from documents (standard generation)
+  - `/game_plan/generate/*`: Additional game plan generation endpoints (dynamically discovered)
   - `/game_plan/review`: Analyze game plans for compliance (standard review)
   - `/game_plan/review/*`: Additional game plan review endpoints (dynamically discovered)
-  - `/BID_notes`: Generate BID notes from game plans (standard notes)
-  - `/BID_notes/*`: Additional BID notes endpoints (dynamically discovered)
   - `/file_extractor/drivers_licence`: Extract information from driver's license images
   - `/file_extractor/*`: Additional file extraction endpoints (dynamically discovered)
   - `/template`: GET/PUT/POST template management with `file_name` query parameter
