@@ -711,11 +711,15 @@ def file_extractor_page():
     )
     
     # File selection
-    image_files = list(FILE_EXTRACTOR_DIR.glob("*.jpg")) + list(FILE_EXTRACTOR_DIR.glob("*.jpeg")) + list(FILE_EXTRACTOR_DIR.glob("*.png"))
+    image_files = (list(FILE_EXTRACTOR_DIR.glob("*.jpg")) + 
+                   list(FILE_EXTRACTOR_DIR.glob("*.jpeg")) + 
+                   list(FILE_EXTRACTOR_DIR.glob("*.png")) + 
+                   list(FILE_EXTRACTOR_DIR.glob("*.gif")) + 
+                   list(FILE_EXTRACTOR_DIR.glob("*.webp")))
     if not image_files:
         st.warning("No image files found in examples/sources/file_extractor/")
         # Allow file upload
-        uploaded_file = st.file_uploader("Upload Image File", type=["jpg", "jpeg", "png"])
+        uploaded_file = st.file_uploader("Upload Image File", type=["jpg", "jpeg", "png", "gif", "webp"])
         if uploaded_file:
             # Create a unique key for the uploaded file
             cache_key = f"{uploaded_file.name}:{uploaded_file.size}"

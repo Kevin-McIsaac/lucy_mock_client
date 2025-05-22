@@ -109,7 +109,7 @@ chmod +x cleanup_processes.sh
 
 ### File Extractor
 
-1. Place image files (.jpg, .jpeg, .png) in `examples/sources/file_extractor/`
+1. Place image files (.jpg, .jpeg, .png, .gif, .webp) in `examples/sources/file_extractor/`
    - Or upload an image directly if no files exist
 2. Select an extraction type from available endpoints
    - Automatically discovers all available `/file_extractor/*` endpoints from the OpenAPI spec

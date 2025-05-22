@@ -59,7 +59,7 @@ To provide a user-friendly interface for processing mortgage-related documents u
   - Alternative endpoints: `{original_filename}_{model_id}_{endpoint_type}.md`
 
 #### 3.1.4 File Extractor
-- **Select Image Files**: Let the user select image files (jpg, jpeg, png) from examples/sources/file_extractor
+- **Select Image Files**: Let the user select image files (jpg, jpeg, png, gif, webp) from examples/sources/file_extractor
 - **Image Processing**: Convert images to base64 for API processing with automatic caching
 - **Extraction Type Selection**: Allow users to choose from dynamically discovered file extractor endpoints
   - Automatically discover all available `/file_extractor/*` endpoints from OpenAPI spec
