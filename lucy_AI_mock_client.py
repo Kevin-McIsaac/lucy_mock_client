@@ -25,6 +25,7 @@ AI_MODELS = {
     "anthropic:claude-3-5-haiku-latest": "Claude 3.5 Haiku (Anthropic)",
     "openai:gpt-4.1": "GPT 4.1 (OpenAI)",
     "openai:gpt-4.1-mini": "GPT 4.1 Mini (OpenAI)",
+    "google_genai:gemini-2.5-flash-preview-05-20": "Gemini 2.5 Flash Preview 05-20(Google)",
 }
 
 # Directory paths
