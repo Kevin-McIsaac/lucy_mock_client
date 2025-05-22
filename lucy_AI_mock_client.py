@@ -832,14 +832,27 @@ def file_extractor_page():
                 extraction_model = model_id
                 
             with st.spinner("Extracting information..."):
+                # Get image type from filename extension and convert to OpenAPI enum format
+                image_extension = Path(filename).suffix.lower().lstrip('.')
+                # Convert to OpenAPI enum values: ["jpeg", "png", "gif", "webp"]
+                image_type_mapping = {
+                    'jpg': 'jpeg',
+                    'jpeg': 'jpeg', 
+                    'png': 'png',
+                    'gif': 'gif',
+                    'webp': 'webp'
+                }
+                image_type = image_type_mapping.get(image_extension, 'jpeg')  # Default to jpeg
+                
                 # Looking at the OpenAPI schema:
-                # 1. The file_extractor endpoints expect a FileExtractorRequest object with:
+                # FileExtractorRequest object with:
                 #    - image_base64: string (required)
                 #    - model: string (with default)
-                # This matches exactly what we're sending
+                #    - image_type: string (enum: ["jpeg", "png", "gif", "webp"], default: "jpeg")
                 data = {
                     "image_base64": img_base64,
-                    "model": extraction_model
+                    "model": extraction_model,
+                    "image_type": image_type
                 }
                 
                 # Choose endpoint based on extraction type

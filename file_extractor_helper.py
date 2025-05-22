@@ -1,16 +1,12 @@
 import streamlit as st
-import os
-import requests
-from typing import Optional, Dict, Any, Union
 from pathlib import Path
 import base64
 import json
-import re
 from io import BytesIO
 from PIL import Image
 
 # Import from main file
-from lucy_AI_mock_client import call_lucy_api, fetch_openapi_spec, API_ENDPOINT, API_KEY, AI_MODELS
+from lucy_AI_mock_client import call_lucy_api, fetch_openapi_spec
 
 # Create directory paths
 FILE_EXTRACTOR_DIR = Path("examples/sources/file_extractor")
@@ -119,9 +115,22 @@ def file_extractor_page():
         # Process image
         if st.button("Extract Information", type="primary"):
             with st.spinner("Extracting information..."):
+                # Get image type from filename extension and convert to OpenAPI enum format
+                image_extension = Path(filename).suffix.lower().lstrip('.')
+                # Convert to OpenAPI enum values: ["jpeg", "png", "gif", "webp"]
+                image_type_mapping = {
+                    'jpg': 'jpeg',
+                    'jpeg': 'jpeg', 
+                    'png': 'png',
+                    'gif': 'gif',
+                    'webp': 'webp'
+                }
+                image_type = image_type_mapping.get(image_extension, 'jpeg')  # Default to jpeg
+                
                 data = {
                     "image_base64": img_base64,
-                    "model": model_id
+                    "model": model_id,
+                    "image_type": image_type
                 }
                 
                 # Choose endpoint based on extraction type

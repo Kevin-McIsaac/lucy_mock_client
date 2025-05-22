@@ -66,7 +66,7 @@ The application integrates with several Lucy AI server endpoints:
 | `/game_plan/review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
 | `/BID_notes` | Standard BID notes | `input_text`, `model` | `content`, `usage_metadata` |
 | `/BID_notes/*` | Specialized BID notes | `input_text`, `model` | `content`, `usage_metadata` |
-| `/file_extractor/drivers_licence` | Extract info from license images | `image_base64`, `model` | `content` (JSON) |
+| `/file_extractor/drivers_licence` | Extract info from license images | `image_base64`, `model`, `image_type` | `content` (JSON) |
 | `/template` | Manage templates | `file_name` (query param) | Various |
 | `/template/list` | List templates | None | Template filename list |
 | `/status` | Server health check | None | Status response |
