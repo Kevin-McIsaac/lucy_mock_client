@@ -922,8 +922,8 @@ def main():
     pages = [
         st.Page(welcome_page, title="Welcome", icon="🏠"),
         st.Page(meeting_summary_page, title="Meeting Summary", icon="📝"),
-        st.Page(game_plan_review_page, title="Game Plan Review", icon="📋"),
         st.Page(game_plan_generate_page, title="Game Plan Generate", icon="🔄"),
+        st.Page(game_plan_review_page, title="Game Plan Review", icon="📋"),
         st.Page(file_extractor_page, title="File Extractor", icon="🖼️"),
         st.Page(template_management_page, title="Template Management", icon="⚙️")
     ]
