@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Streamlit application that interfaces with the Lucy AI server for processing mortgage documents, including meeting transcript summaries, game plan reviews, BID notes generation, and file extraction.
+This is a Streamlit application that interfaces with the Lucy AI server for processing mortgage documents, including meeting transcript summaries, game plan reviews, game plan generation, and file extraction.
 
 ## Key Components
 
@@ -64,8 +64,8 @@ The application integrates with several Lucy AI server endpoints:
 | `/interview/initial_broker_interview/transcript_to_summary` | Process meeting transcripts | `input_text`, `model` | `content`, `usage_metadata` |
 | `/game_plan/review` | Standard game plan review | `input_text`, `model` | `content`, `usage_metadata` |
 | `/game_plan/review/*` | Specialized game plan reviews | `input_text`, `model` | `content`, `usage_metadata` |
-| `/BID_notes` | Standard BID notes | `input_text`, `model` | `content`, `usage_metadata` |
-| `/BID_notes/*` | Specialized BID notes | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/generate` | Standard game plan generation | `input_text`, `model` | `content`, `usage_metadata` |
+| `/game_plan/generate/*` | Specialized game plan generation | `input_text`, `model` | `content`, `usage_metadata` |
 | `/file_extractor/drivers_licence` | Extract info from license images | `image_base64`, `model`, `image_type` | `content` (JSON) |
 | `/template` | Manage templates | `file_name` (query param) | Various |
 | `/template/list` | List templates | None | Template filename list |
@@ -82,7 +82,7 @@ Notes:
 
 ### File Structure
 - Source files in `examples/sources/` (transcripts, game_plans, file_extractor)
-- Output files in `examples/output/` (meeting_summary, game_plan_review, BID_notes)
+- Output files in `examples/output/` (meeting_summary, game_plan_review, game_plan_generate)
 - Output naming: `{original_filename}_{model_id}.md` or `{original_filename}_{model_id}_{endpoint_type}.md`
 
 ### Adding New Functionality
