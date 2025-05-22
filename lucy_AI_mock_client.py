@@ -21,7 +21,10 @@ API_KEY = os.getenv('API_KEY', '')
 # Available AI models
 AI_MODELS = {
     "bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0": "Claude 3.5 Sonnet (Bedrock)",
-
+    "anthropic:claude-3-7-sonnet-latest": "Claude 3.7 Sonnet (Anthropic)",
+    "anthropic:claude-3-5-haiku-latest": "Claude 3.5 Haiku (Anthropic)",
+    "openai:gpt-4.1": "GPT 4.1 (OpenAI)",
+    "openai:gpt-4.1-mini": "GPT 4.1 Mini (OpenAI)",
 }
 
 # Directory paths
