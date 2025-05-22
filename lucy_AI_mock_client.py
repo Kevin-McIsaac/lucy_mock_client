@@ -20,14 +20,8 @@ API_KEY = os.getenv('API_KEY', '')
 
 # Available AI models
 AI_MODELS = {
-    "anthropic:claude-3-7-sonnet-latest": "Claude 3.7 Sonnet (Anthropic)",
-    "anthropic:claude-3-5-haiku-latest": "Claude 3.5 Haiku (Anthropic)",
-    "openai:gpt-4.1": "GPT 4.1 (OpenAI)",
-    "openai:gpt-4.1-mini": "GPT 4.1 Mini (OpenAI)",
-    "google_genai:gemini-2.0-flash": "Gemini 2.0 Flash (Google)",
-    "google_genai:gemini-2.5-flash-preview-04-17": "Gemini 2.5 Flash Preview (Google)",
-    "groq:meta-llama/llama-4-maverick-17b-128e-instruct": "Llama 4 Maverick (Groq)",
-    "groq:meta-llama/llama-4-scout-17b-16e-instruct": "Llama 4 Scout (Groq)"
+    "bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0": "Claude 3.5 Sonnet (Bedrock)",
+
 }
 
 # Directory paths
@@ -675,11 +669,10 @@ def file_extractor_page():
         st.session_state.image_cache = {}
     
     # Check if model is supported for file extraction
-    supported_models = ["anthropic:claude-3-7-sonnet-latest", "anthropic:claude-3-5-sonnet-latest", 
-                         "openai:gpt-4.1", "openai:gpt-4.1-mini"]
+    supported_models = ["bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0"]
     
     if model_id not in supported_models:
-        st.warning(f"File extractor only works with Claude Sonnet or GPT-4 models. Current model ({AI_MODELS[model_id]}) may not work properly.")
+        st.warning(f"File extractor only works with Claude Sonnet. Current model ({AI_MODELS[model_id]}) may not work properly.")
         supported_model_names = [AI_MODELS[m] for m in supported_models if m in AI_MODELS]
         st.info(f"Supported models: {', '.join(supported_model_names)}")
         
@@ -825,7 +818,7 @@ def file_extractor_page():
             # Before processing, verify the model is supported
             if model_id not in supported_models:
                 # Auto-select a fallback model
-                fallback_model = "anthropic:claude-3-7-sonnet-latest" if "anthropic:claude-3-7-sonnet-latest" in AI_MODELS else "openai:gpt-4.1"
+                fallback_model = "bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0" 
                 st.warning(f"Switching to {AI_MODELS[fallback_model]} for file extraction as the selected model is not supported.")
                 extraction_model = fallback_model
             else:
