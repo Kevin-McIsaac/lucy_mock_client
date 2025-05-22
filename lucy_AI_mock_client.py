@@ -744,6 +744,19 @@ def file_extractor_page():
                         f.write(img_bytes)
             else:
                 img_base64 = st.session_state.image_cache[cache_key]
+                # Still need to load and display the image even if base64 is cached
+                img_bytes = uploaded_file.getvalue()
+                
+                # Load image for display
+                img = Image.open(BytesIO(img_bytes))
+                
+                # Display image size info
+                img_byte_size = len(img_bytes)
+                st.info(f"Image size: {img_byte_size/1024:.1f} KB, dimensions: {img.width}x{img.height}")
+                
+                # Update the image in session state for persistent display
+                st.session_state.current_image = img
+                st.session_state.current_caption = uploaded_file.name
             filename = uploaded_file.name
             
             # Image will be displayed in the comparison section
@@ -778,6 +791,20 @@ def file_extractor_page():
                     st.session_state.image_cache[cache_key] = img_base64
             else:
                 img_base64 = st.session_state.image_cache[cache_key]
+                # Still need to load and display the image even if base64 is cached
+                with open(selected_file, "rb") as f:
+                    img_bytes = f.read()
+                
+                # Load image for display
+                img = Image.open(BytesIO(img_bytes))
+                
+                # Display image size info
+                img_byte_size = len(img_bytes)
+                st.info(f"Image size: {img_byte_size/1024:.1f} KB, dimensions: {img.width}x{img.height}")
+                
+                # Update the image in session state for persistent display
+                st.session_state.current_image = img
+                st.session_state.current_caption = selected_file.name
             filename = selected_file.name
             
             # Image will be displayed in the comparison section
