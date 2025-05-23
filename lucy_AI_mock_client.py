@@ -673,7 +673,7 @@ def file_extractor_page():
         st.session_state.image_cache = {}
     
     # Check if model is supported for file extraction
-    supported_models = ["bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0"]
+    supported_models = ["bedrock:anthropic.claude-3-5-sonnet-20241022-v2:0", "google_genai:gemini-2.5-flash-preview-05-20"]
     
     if model_id not in supported_models:
         st.warning(f"File extractor only works with Claude Sonnet. Current model ({AI_MODELS[model_id]}) may not work properly.")
